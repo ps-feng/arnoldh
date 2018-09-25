@@ -2,5 +2,11 @@ module Lib
     ( someFunc
     ) where
 
+import Lexer
+import Text.Megaparsec
+
 someFunc :: IO ()
-someFunc = putStrLn "someFunc"
+someFunc = do
+    input <- getLine
+    parseTest programParser input
+
