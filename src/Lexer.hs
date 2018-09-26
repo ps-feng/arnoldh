@@ -95,6 +95,9 @@ setValueParser = lexeme (string arnSetValue)
 integerParser :: Parser Integer
 integerParser = lexeme L.decimal
 
+startAssignParser :: Parser String
+startAssignParser = lexeme (string arnAssignVariable)
+
 endAssignParser :: Parser String
 endAssignParser = lexeme (string arnEndAssignVariable)
 
@@ -120,6 +123,15 @@ arithOperators =
 arithOperatorParser :: Parser String
 arithOperatorParser = foldr1 (<|>) (map (lexeme . try . string) arithOperators)
 
+identifier :: Parser String
+identifier = (lexeme . try) (p >>= check)
+  where
+    p = (:) <$> letterChar <*> many alphaNumChar
+    check x =
+      if x `elem` reservedWords
+        then fail $ "keyword " ++ show x ++ " cannot be an identifier"
+        else return x
+
 --- Parser after this
 arithOps :: [(String, ArithBinaryOp)]
 arithOps =
@@ -135,22 +147,37 @@ arithOpMapper p =
   (\op ->
      case lookup op arithOps of
        Just x -> return x
-       Nothing -> error "unknown operator")
+       Nothing -> fail "unknown operator")
 
 intToIntConst :: Parser Integer -> Parser ArithExpr
 intToIntConst x = x >>= (\x' -> return (IntConst x'))
 
-arithExpressionParser :: Parser ArithExpr
-arithExpressionParser = do
+arithInitialExpressionParser :: Parser ArithExpr
+arithInitialExpressionParser = do
   setValueParser
   a <- intToIntConst integerParser
   op <- arithOpMapper arithOperatorParser
   b <- intToIntConst integerParser
   return (ArithBinary op a b)
 
+arithPartialExpressionParser :: ArithExpr -> Parser ArithExpr
+arithPartialExpressionParser prevExpr = do
+  op <- arithOpMapper arithOperatorParser
+  a <- intToIntConst integerParser
+  return (ArithBinary op a prevExpr)
+
+-- statementParser :: Parser Statement
+-- statementParser = do
+--   startAssignParser
+--   id <- identifier
+--   expr <- arithExpressionParser
+--   endAssignParser
+--   return (Assignment "dummy" expr)
+
 programParser :: Parser String
 programParser = do
   beginParser
   -- statement parser here
-  arithExpressionParser
+  expr <- arithInitialExpressionParser
+  some (arithPartialExpressionParser expr)
   endParser

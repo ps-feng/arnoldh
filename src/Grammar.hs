@@ -1,6 +1,6 @@
 module Grammar where
 
-type Program = [Stmt]
+type Program = [Statement]
 
 data ArithBinaryOp
   = Add
@@ -15,6 +15,6 @@ data ArithExpr
                 ArithExpr
                 ArithExpr
 
-data Stmt =
+data Statement =
   Assignment String
              ArithExpr
