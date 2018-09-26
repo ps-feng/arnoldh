@@ -1,6 +1,7 @@
 module Lexer where
 
 import Data.Void
+import Grammar
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
@@ -78,6 +79,7 @@ type Parser = Parsec Void String
 spaceParser :: Parser ()
 spaceParser = space
 
+-- this will trim all the whitespace after consuming the parsed lexeme
 lexeme :: Parser a -> Parser a
 lexeme = L.lexeme spaceParser
 
@@ -87,21 +89,68 @@ beginParser = lexeme (string arnBeginMain)
 endParser :: Parser String
 endParser = lexeme (string arnEndMain)
 
+setValueParser :: Parser String
+setValueParser = lexeme (string arnSetValue)
+
+integerParser :: Parser Integer
+integerParser = lexeme L.decimal
+
+endAssignParser :: Parser String
+endAssignParser = lexeme (string arnEndAssignVariable)
+
 reservedWords :: [String]
 reservedWords =
   [ arnPlusOperator
   , arnMinusOperator
   , arnDivisionOperator
   , arnMultiplicationOperator
+  , arnSetValue
   ]
 
--- add 'lexeme . try' here
 reservedWordParser :: Parser String
-reservedWordParser = foldl1 (<|>) (map string reservedWords)
+reservedWordParser = foldr1 (<|>) (map (lexeme . try . string) reservedWords)
+
+arithOperators =
+  [ arnPlusOperator
+  , arnMinusOperator
+  , arnDivisionOperator
+  , arnMultiplicationOperator
+  ]
+
+arithOperatorParser :: Parser String
+arithOperatorParser = foldr1 (<|>) (map (lexeme . try . string) arithOperators)
+
+--- Parser after this
+arithOps :: [(String, ArithBinaryOp)]
+arithOps =
+  [ (arnPlusOperator, Add)
+  , (arnMinusOperator, Minus)
+  , (arnDivisionOperator, Divide)
+  , (arnMultiplicationOperator, Mult)
+  ]
+
+arithOpMapper :: Parser String -> Parser ArithBinaryOp
+arithOpMapper p =
+  p >>=
+  (\op ->
+     case lookup op arithOps of
+       Just x -> return x
+       Nothing -> error "unknown operator")
+
+intToIntConst :: Parser Integer -> Parser ArithExpr
+intToIntConst x = x >>= (\x' -> return (IntConst x'))
+
+arithExpressionParser :: Parser ArithExpr
+arithExpressionParser = do
+  setValueParser
+  a <- intToIntConst integerParser
+  op <- arithOpMapper arithOperatorParser
+  b <- intToIntConst integerParser
+  return (ArithBinary op a b)
 
 programParser :: Parser String
 programParser = do
   beginParser
-  reservedWordParser
-  spaceParser
+  -- statement parser here
+  arithExpressionParser
   endParser
