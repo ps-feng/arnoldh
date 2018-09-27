@@ -124,8 +124,8 @@ arithOperators =
 arithOperatorParser :: Parser String
 arithOperatorParser = foldr1 (<|>) (map (lexeme . try . string) arithOperators)
 
-identifier :: Parser String
-identifier = (lexeme . try) (p >>= check)
+identifierParser :: Parser String
+identifierParser = (lexeme . try) (p >>= check)
   where
     p = (:) <$> letterChar <*> many alphaNumChar
     check x =
@@ -153,6 +153,12 @@ arithOpMapper p =
 intToIntConst :: Parser Integer -> Parser ArithExpr
 intToIntConst x = x >>= (\x' -> return (IntConst x'))
 
+identifierToVarParser :: Parser String -> Parser ArithExpr
+identifierToVarParser x = x >>= (\x' -> return (Var x'))
+
+arithTermParser :: Parser ArithExpr
+arithTermParser = intToIntConst integerParser <|> identifierToVarParser identifierParser
+
 data PartialArithExpr =
   PartialArith ArithBinaryOp
                ArithExpr
@@ -160,7 +166,7 @@ data PartialArithExpr =
 arithPartialExpressionParser :: Parser PartialArithExpr
 arithPartialExpressionParser = do
   op <- arithOpMapper arithOperatorParser
-  a <- intToIntConst integerParser
+  a <- arithTermParser
   return (PartialArith op a)
 
 arithExpressionParser :: ArithExpr -> Parser ArithExpr
@@ -179,9 +185,9 @@ arithExpressionParser' startExpr partialsParser = do
 assignmentParser :: Parser Statement
 assignmentParser = do
   startAssignParser
-  id <- identifier
+  id <- identifierParser
   setValueParser
-  startValue <- intToIntConst integerParser
+  startValue <- arithTermParser
   expr <- arithExpressionParser startValue
   endAssignParser
   return (Assignment id expr)

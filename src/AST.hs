@@ -7,7 +7,7 @@ data ArithBinaryOp
   | Minus
   | Mult
   | Divide
-  deriving (Show)
+  deriving (Show, Eq)
 
 data ArithExpr
   = Var String
@@ -15,21 +15,21 @@ data ArithExpr
   | ArithBinary ArithBinaryOp
                 ArithExpr
                 ArithExpr
-  deriving (Show)
+  deriving (Show, Eq)
 
 data PrintExpr
   = Print String
   | PrintVar String
-  deriving (Show)
+  deriving (Show, Eq)
 
 data IntVarDecl =
   IntVar String
          Integer
-  deriving (Show)
+  deriving (Show, Eq)
 
 data Statement
   = Assignment String
                ArithExpr
   | PrintExpr
   | IntVarDecl
-  deriving (Show)
+  deriving (Show, Eq)
