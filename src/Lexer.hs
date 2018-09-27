@@ -1,7 +1,7 @@
 module Lexer where
 
+import AST
 import Data.Void
-import Grammar
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
@@ -118,6 +118,7 @@ arithOperators =
   , arnMinusOperator
   , arnDivisionOperator
   , arnMultiplicationOperator
+  , arnModulo
   ]
 
 arithOperatorParser :: Parser String
@@ -152,32 +153,45 @@ arithOpMapper p =
 intToIntConst :: Parser Integer -> Parser ArithExpr
 intToIntConst x = x >>= (\x' -> return (IntConst x'))
 
-arithInitialExpressionParser :: Parser ArithExpr
-arithInitialExpressionParser = do
+data PartialArithExpr =
+  PartialArith ArithBinaryOp
+               ArithExpr
+
+arithPartialExpressionParser :: Parser PartialArithExpr
+arithPartialExpressionParser = do
+  op <- arithOpMapper arithOperatorParser
+  a <- intToIntConst integerParser
+  return (PartialArith op a)
+
+arithExpressionParser :: ArithExpr -> Parser ArithExpr
+arithExpressionParser startValue = do
+  partials <- many arithPartialExpressionParser
+  expr <- arithExpressionParser' startValue (return partials)
+  return expr
+
+arithExpressionParser' ::
+     ArithExpr -> Parser [PartialArithExpr] -> Parser ArithExpr
+arithExpressionParser' startExpr partialsParser = do
+  partials <- partialsParser
+  return $
+    foldl (\acc (PartialArith op a) -> ArithBinary op acc a) startExpr partials
+
+assignmentParser :: Parser Statement
+assignmentParser = do
+  startAssignParser
+  id <- identifier
   setValueParser
-  a <- intToIntConst integerParser
-  op <- arithOpMapper arithOperatorParser
-  b <- intToIntConst integerParser
-  return (ArithBinary op a b)
+  startValue <- intToIntConst integerParser
+  expr <- arithExpressionParser startValue
+  endAssignParser
+  return (Assignment id expr)
 
-arithPartialExpressionParser :: ArithExpr -> Parser ArithExpr
-arithPartialExpressionParser prevExpr = do
-  op <- arithOpMapper arithOperatorParser
-  a <- intToIntConst integerParser
-  return (ArithBinary op a prevExpr)
+statementParser :: Parser [Statement]
+statementParser = some assignmentParser
 
--- statementParser :: Parser Statement
--- statementParser = do
---   startAssignParser
---   id <- identifier
---   expr <- arithExpressionParser
---   endAssignParser
---   return (Assignment "dummy" expr)
-
-programParser :: Parser String
+programParser :: Parser Program
 programParser = do
   beginParser
-  -- statement parser here
-  expr <- arithInitialExpressionParser
-  some (arithPartialExpressionParser expr)
+  program <- statementParser
   endParser
+  return program
