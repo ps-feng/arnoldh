@@ -98,6 +98,9 @@ setValueParser = lexeme (string arnSetValue)
 integerParser :: Parser Integer
 integerParser = lexeme L.decimal
 
+stringParser :: Parser String
+stringParser = char '"' >> manyTill L.charLiteral (char '"')
+
 booleanWords :: [String]
 booleanWords = [arnTrue, arnFalse]
 
@@ -130,7 +133,7 @@ binaryOperatorParser =
   foldr1 (<|>) (map (lexeme . try . string) binaryOperators)
 
 reservedWords :: [String]
-reservedWords = binaryOperators ++ [arnSetValue]
+reservedWords = binaryOperators ++ [arnSetValue, arnPrint]
 
 reservedWordParser :: Parser String
 reservedWordParser = foldr1 (<|>) (map (lexeme . try . string) reservedWords)
@@ -143,6 +146,12 @@ identifierParser = (lexeme . try) (p >>= check)
       if x `elem` reservedWords
         then fail $ "keyword " ++ show x ++ " cannot be an identifier"
         else return x
+
+printParser :: Parser String
+printParser = lexeme (string arnPrint)
+
+intDeclarationParser :: Parser String
+intDeclarationParser = lexeme (string arnDeclareInt)
 
 --- Parser after this
 ops :: [(String, Op)]
@@ -169,7 +178,20 @@ opMapper p =
        Nothing -> fail "unknown operator")
 
 intToIntConst :: Parser Integer -> Parser Expr
-intToIntConst x = x >>= (\x' -> return (IntConst x'))
+intToIntConst x = x >>= \x' -> return (Int x')
+
+booleanToIntConst :: Parser String -> Parser Expr
+booleanToIntConst x =
+  x >>=
+  (\x' ->
+     case () of
+       _
+         | x' == arnFalse -> return (Int 0)
+         | x' == arnTrue -> return (Int 1)
+         | otherwise -> fail "invalid value")
+
+stringToStringConst :: Parser String -> Parser Expr
+stringToStringConst x = x >>= \x' -> return (String x')
 
 identifierToVarParser :: Parser String -> Parser Expr
 identifierToVarParser x = x >>= (\x' -> return (Var x'))
@@ -178,16 +200,6 @@ binaryOpTermParser :: Parser Expr
 binaryOpTermParser =
   intToIntConst integerParser <|> booleanTermParser <|>
   identifierToVarParser identifierParser
-
-booleanToIntConst :: Parser String -> Parser Expr
-booleanToIntConst x =
-  x >>=
-  (\x' ->
-     case () of
-       _
-         | x' == arnFalse -> return (IntConst 0)
-         | x' == arnTrue -> return (IntConst 1)
-         | otherwise -> fail "invalid value")
 
 booleanTermParser :: Parser Expr
 booleanTermParser = booleanToIntConst booleanParser
@@ -229,8 +241,27 @@ assignmentParser = do
   endAssignParser
   return (Assignment id expr)
 
+termParser :: Parser Expr
+termParser =
+  (intToIntConst integerParser) <|> (identifierToVarParser identifierParser) <|>
+  (stringToStringConst stringParser)
+
+printStatementParser :: Parser Statement
+printStatementParser = do
+  printParser
+  term <- termParser
+  return (Print term)
+
+intDeclarationStatementParser :: Parser Statement
+intDeclarationStatementParser = do
+  intDeclarationParser
+  number <- integerParser
+  return (IntVar number)
+
 statementParser :: Parser [Statement]
-statementParser = some assignmentParser
+statementParser =
+  some
+    (assignmentParser <|> printStatementParser <|> intDeclarationStatementParser)
 
 programParser :: Parser Program
 programParser = do

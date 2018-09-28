@@ -15,28 +15,19 @@ data Op
   deriving (Show, Eq)
 
 data Expr
-  = IntConst Integer
+  = Int Integer
+  | String String -- check also Data.Text
   | Var String
   | BinaryOp Op
              Expr
              Expr
   deriving (Show, Eq)
 
-data PrintStatement
-  = Print String
-  | PrintVar String
-  deriving (Show, Eq)
-
-data IntVarDecl =
-  IntVar String
-         Integer
-  deriving (Show, Eq)
-
 data Statement
   = Assignment String
                Expr
-  | PrintStatement
-  | IntVarDecl -- 16bit signed
+  | Print Expr
+  | IntVar Integer -- 16bit signed
   deriving (Show, Eq)
 
 -- GRAMMAR DEFINITION

@@ -30,7 +30,7 @@ spec = do
             where
               opStrings = map fst ops
       let astResults =
-            map (\astOp -> Just (BinaryOp astOp (IntConst 4) (Var "b"))) astOps
+            map (\astOp -> Just (BinaryOp astOp (Int 4) (Var "b"))) astOps
             where
               astOps = map snd ops
       parseInputs `shouldBe` astResults
@@ -49,12 +49,9 @@ spec = do
              Or
              (BinaryOp
                 And
-                (BinaryOp
-                   GreaterThan
-                   (BinaryOp Add (IntConst 4) (Var "b"))
-                   (IntConst 3))
-                (IntConst 1))
-             (IntConst 0))
+                (BinaryOp GreaterThan (BinaryOp Add (Int 4) (Var "b")) (Int 3))
+                (Int 1))
+             (Int 0))
   describe "assignment parser" $ do
     it "should fail if assignment statements are not provided" $ do
       parseMaybe
@@ -68,7 +65,7 @@ spec = do
         "GET TO THE CHOPPER myvar \
         \HERE IS MY INVITATION 4 \
         \ENOUGH TALK" `shouldBe`
-        Just (Assignment "myvar" (IntConst 4))
+        Just (Assignment "myvar" (Int 4))
     it "should parse a variable assignment" $ do
       parseMaybe
         assignmentParser
@@ -93,9 +90,23 @@ spec = do
                 Divide
                 (BinaryOp
                    Minus
-                   (BinaryOp
-                      Mult
-                      (BinaryOp Add (IntConst 4) (Var "b"))
-                      (IntConst 5))
-                   (IntConst 1))
+                   (BinaryOp Mult (BinaryOp Add (Int 4) (Var "b")) (Int 5))
+                   (Int 1))
                 (Var "send")))
+  describe "print statement parser" $ do
+    it "should parse double-quoted strings" $ do
+      parseMaybe printStatementParser "TALK TO THE HAND \"Hello\"" `shouldBe`
+        Just (Print (String "Hello"))
+    it "should not parse single-quoted strings" $ do
+      parseMaybe printStatementParser "TALK TO THE HAND \'Hello\'" `shouldBe`
+        Nothing
+    it "should parse printing of an integer" $ do
+      parseMaybe printStatementParser "TALK TO THE HAND 4" `shouldBe`
+        Just (Print (Int 4))
+    it "should parse a variable reference" $ do
+      parseMaybe printStatementParser "TALK TO THE HAND a" `shouldBe`
+        Just (Print (Var "a"))
+  describe "int declaration parser" $ do
+    it "should parse integer" $ do
+      parseMaybe intDeclarationStatementParser "HEY CHRISTMAS TREE 5" `shouldBe`
+        Just (IntVar 5)
