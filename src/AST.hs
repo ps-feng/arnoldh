@@ -27,7 +27,9 @@ data Statement
   = Assignment String
                Expr
   | Print Expr
-  | IntVar Integer -- 16bit signed
+  | IntVar Integer -- TODO: 16bit signed
+  | If Expr [Statement] [Statement]
+  | While Expr [Statement]
   deriving (Show, Eq)
 
 -- GRAMMAR DEFINITION

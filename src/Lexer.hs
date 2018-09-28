@@ -133,7 +133,9 @@ binaryOperatorParser =
   foldr1 (<|>) (map (lexeme . try . string) binaryOperators)
 
 reservedWords :: [String]
-reservedWords = binaryOperators ++ [arnSetValue, arnPrint]
+reservedWords =
+  binaryOperators ++
+  [arnSetValue, arnPrint, arnIf, arnElse, arnEndIf, arnWhile, arnEndWhile]
 
 reservedWordParser :: Parser String
 reservedWordParser = foldr1 (<|>) (map (lexeme . try . string) reservedWords)
@@ -152,6 +154,21 @@ printParser = lexeme (string arnPrint)
 
 intDeclarationParser :: Parser String
 intDeclarationParser = lexeme (string arnDeclareInt)
+
+ifParser :: Parser String
+ifParser = lexeme (string arnIf)
+
+elseParser :: Parser String
+elseParser = lexeme (string arnElse)
+
+endIfParser :: Parser String
+endIfParser = lexeme (string arnEndIf)
+
+whileParser :: Parser String
+whileParser = lexeme (string arnWhile)
+
+endWhileParser :: Parser String
+endWhileParser = lexeme (string arnEndWhile)
 
 --- Parser after this
 ops :: [(String, Op)]
