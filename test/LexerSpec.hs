@@ -1,6 +1,4 @@
-module LexerSpec
-  ( spec
-  ) where
+module LexerSpec where
 
 import AST
 import Lexer
@@ -20,6 +18,43 @@ spec = do
         Just "YOU HAVE BEEN TERMINATED"
     it "should fail to parse anything else" $ do
       parseMaybe endParser "SOME OTHER COMMAND" `shouldBe` Nothing
+  describe "expression parser" $ do
+    it "should parse all binary operations" $ do
+      let parseInputs =
+            map
+              (\opStr ->
+                 parseMaybe
+                   expressionParser
+                   ("HERE IS MY INVITATION 4 " ++ opStr ++ " b"))
+              opStrings
+            where
+              opStrings = map fst ops
+      let astResults =
+            map (\astOp -> Just (BinaryOp astOp (IntConst 4) (Var "b"))) astOps
+            where
+              astOps = map snd ops
+      parseInputs `shouldBe` astResults
+    it "should parse chained binary operations" $
+      -- (((4 + b) > 3) && 1) || 0
+     do
+      parseMaybe
+        expressionParser
+        "HERE IS MY INVITATION 4 \
+        \GET UP b \
+        \LET OFF SOME STEAM BENNET 3 \
+        \KNOCK KNOCK @NO PROBLEMO \
+        \CONSIDER THAT A DIVORCE @I LIED" `shouldBe`
+        Just
+          (BinaryOp
+             Or
+             (BinaryOp
+                And
+                (BinaryOp
+                   GreaterThan
+                   (BinaryOp Add (IntConst 4) (Var "b"))
+                   (IntConst 3))
+                (IntConst 1))
+             (IntConst 0))
   describe "assignment parser" $ do
     it "should fail if assignment statements are not provided" $ do
       parseMaybe
@@ -54,13 +89,13 @@ spec = do
         Just
           (Assignment
              "myvar"
-             (ArithBinary
+             (BinaryOp
                 Divide
-                (ArithBinary
+                (BinaryOp
                    Minus
-                   (ArithBinary
+                   (BinaryOp
                       Mult
-                      (ArithBinary Add (IntConst 4) (Var "b"))
+                      (BinaryOp Add (IntConst 4) (Var "b"))
                       (IntConst 5))
                    (IntConst 1))
                 (Var "send")))

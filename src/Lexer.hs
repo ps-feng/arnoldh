@@ -25,6 +25,8 @@ arnMultiplicationOperator = "YOU'RE FIRED"
 
 arnDivisionOperator = "HE HAD TO SPLIT"
 
+arnModulo = "I LET HIM GO"
+
 arnPrint = "TALK TO THE HAND"
 
 arnRead =
@@ -36,9 +38,9 @@ arnSetValue = "HERE IS MY INVITATION"
 
 arnEndAssignVariable = "ENOUGH TALK"
 
-arnFalse = "I LIED"
+arnFalse = "@I LIED"
 
-arnTrue = "NO PROBLEMO"
+arnTrue = "@NO PROBLEMO"
 
 arnEqualTo = "YOU ARE NOT YOU YOU ARE ME"
 
@@ -72,8 +74,9 @@ arnNonVoidMethod = "GIVE THESE PEOPLE AIR"
 
 arnAssignVariableFromMethodCall = "GET YOUR ASS TO MARS"
 
-arnModulo = "I LET HIM GO"
-
+-- Useful links
+-- https://markkarpov.com/megaparsec/parsing-simple-imperative-language.html
+-- http://akashagrawal.me/beginners-guide-to-megaparsec/
 type Parser = Parsec Void String
 
 spaceParser :: Parser ()
@@ -95,34 +98,42 @@ setValueParser = lexeme (string arnSetValue)
 integerParser :: Parser Integer
 integerParser = lexeme L.decimal
 
+booleanWords :: [String]
+booleanWords = [arnTrue, arnFalse]
+
+booleanParser :: Parser String
+booleanParser = foldr1 (<|>) (map (lexeme . try . string) booleanWords)
+
 startAssignParser :: Parser String
 startAssignParser = lexeme (string arnAssignVariable)
 
 endAssignParser :: Parser String
 endAssignParser = lexeme (string arnEndAssignVariable)
 
-reservedWords :: [String]
-reservedWords =
-  [ arnPlusOperator
-  , arnMinusOperator
-  , arnDivisionOperator
-  , arnMultiplicationOperator
-  , arnSetValue
-  ]
-
-reservedWordParser :: Parser String
-reservedWordParser = foldr1 (<|>) (map (lexeme . try . string) reservedWords)
-
-arithOperators =
+binaryOperators :: [String]
+binaryOperators =
   [ arnPlusOperator
   , arnMinusOperator
   , arnDivisionOperator
   , arnMultiplicationOperator
   , arnModulo
+  -- logical operators
+  , arnOr
+  , arnAnd
+  -- comparison
+  , arnEqualTo
+  , arnGreaterThan
   ]
 
-arithOperatorParser :: Parser String
-arithOperatorParser = foldr1 (<|>) (map (lexeme . try . string) arithOperators)
+binaryOperatorParser :: Parser String
+binaryOperatorParser =
+  foldr1 (<|>) (map (lexeme . try . string) binaryOperators)
+
+reservedWords :: [String]
+reservedWords = binaryOperators ++ [arnSetValue]
+
+reservedWordParser :: Parser String
+reservedWordParser = foldr1 (<|>) (map (lexeme . try . string) reservedWords)
 
 identifierParser :: Parser String
 identifierParser = (lexeme . try) (p >>= check)
@@ -134,61 +145,87 @@ identifierParser = (lexeme . try) (p >>= check)
         else return x
 
 --- Parser after this
-arithOps :: [(String, ArithBinaryOp)]
-arithOps =
+ops :: [(String, Op)]
+ops =
   [ (arnPlusOperator, Add)
   , (arnMinusOperator, Minus)
   , (arnDivisionOperator, Divide)
   , (arnMultiplicationOperator, Mult)
+  , (arnModulo, Modulo)
+  -- logical operators
+  , (arnOr, Or)
+  , (arnAnd, And)
+  -- comparison
+  , (arnEqualTo, EqualTo)
+  , (arnGreaterThan, GreaterThan)
   ]
 
-arithOpMapper :: Parser String -> Parser ArithBinaryOp
-arithOpMapper p =
+opMapper :: Parser String -> Parser Op
+opMapper p =
   p >>=
   (\op ->
-     case lookup op arithOps of
+     case lookup op ops of
        Just x -> return x
        Nothing -> fail "unknown operator")
 
-intToIntConst :: Parser Integer -> Parser ArithExpr
+intToIntConst :: Parser Integer -> Parser Expr
 intToIntConst x = x >>= (\x' -> return (IntConst x'))
 
-identifierToVarParser :: Parser String -> Parser ArithExpr
+identifierToVarParser :: Parser String -> Parser Expr
 identifierToVarParser x = x >>= (\x' -> return (Var x'))
 
-arithTermParser :: Parser ArithExpr
-arithTermParser = intToIntConst integerParser <|> identifierToVarParser identifierParser
+binaryOpTermParser :: Parser Expr
+binaryOpTermParser =
+  intToIntConst integerParser <|> booleanTermParser <|>
+  identifierToVarParser identifierParser
 
-data PartialArithExpr =
-  PartialArith ArithBinaryOp
-               ArithExpr
+booleanToIntConst :: Parser String -> Parser Expr
+booleanToIntConst x =
+  x >>=
+  (\x' ->
+     case () of
+       _
+         | x' == arnFalse -> return (IntConst 0)
+         | x' == arnTrue -> return (IntConst 1)
+         | otherwise -> fail "invalid value")
 
-arithPartialExpressionParser :: Parser PartialArithExpr
-arithPartialExpressionParser = do
-  op <- arithOpMapper arithOperatorParser
-  a <- arithTermParser
-  return (PartialArith op a)
+booleanTermParser :: Parser Expr
+booleanTermParser = booleanToIntConst booleanParser
 
-arithExpressionParser :: ArithExpr -> Parser ArithExpr
-arithExpressionParser startValue = do
-  partials <- many arithPartialExpressionParser
-  expr <- arithExpressionParser' startValue (return partials)
+data PartialExpr =
+  PartialExpr Op
+              Expr
+
+partialBinaryOperationParser :: Parser PartialExpr
+partialBinaryOperationParser = do
+  op <- opMapper binaryOperatorParser
+  a <- binaryOpTermParser
+  return (PartialExpr op a)
+
+binaryExpressionParser :: Expr -> Parser Expr
+binaryExpressionParser startValue = do
+  partials <- many partialBinaryOperationParser
+  expr <- binaryExpressionParser' startValue (return partials)
   return expr
 
-arithExpressionParser' ::
-     ArithExpr -> Parser [PartialArithExpr] -> Parser ArithExpr
-arithExpressionParser' startExpr partialsParser = do
+binaryExpressionParser' :: Expr -> Parser [PartialExpr] -> Parser Expr
+binaryExpressionParser' startExpr partialsParser = do
   partials <- partialsParser
   return $
-    foldl (\acc (PartialArith op a) -> ArithBinary op acc a) startExpr partials
+    foldl (\acc (PartialExpr op a) -> BinaryOp op acc a) startExpr partials
+
+expressionParser :: Parser Expr
+expressionParser = do
+  setValueParser
+  startValue <- binaryOpTermParser
+  expr <- binaryExpressionParser startValue
+  return expr
 
 assignmentParser :: Parser Statement
 assignmentParser = do
   startAssignParser
   id <- identifierParser
-  setValueParser
-  startValue <- arithTermParser
-  expr <- arithExpressionParser startValue
+  expr <- expressionParser
   endAssignParser
   return (Assignment id expr)
 
