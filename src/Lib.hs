@@ -5,16 +5,13 @@ module Lib
 import Lexer
 import Text.Megaparsec
 
-input = "IT'S SHOWTIME \
-        \GET TO THE CHOPPER myvar \
-        \HERE IS MY INVITATION 4 \
-        \GET UP 2 \
-        \GET UP 4 \
-        \GET DOWN 5 \
-        \ENOUGH TALK \
-        \YOU HAVE BEEN TERMINATED"
+input = "BECAUSE I'M GOING TO SAY PLEASE a \
+        \TALK TO THE HAND \"a is true\" \
+        \TALK TO THE HAND \"b might be true\" \
+        \BULLSHIT \
+        \YOU HAVE NO RESPECT FOR LOGIC"
 
 someFunc :: IO ()
 someFunc = do
-    parseTest programParser input
+    parseTest ifStatementParser input
 

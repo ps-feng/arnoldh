@@ -99,7 +99,7 @@ integerParser :: Parser Integer
 integerParser = lexeme L.decimal
 
 stringParser :: Parser String
-stringParser = char '"' >> manyTill L.charLiteral (char '"')
+stringParser = lexeme (char '"' >> manyTill L.charLiteral (char '"'))
 
 booleanWords :: [String]
 booleanWords = [arnTrue, arnFalse]
@@ -275,14 +275,28 @@ intDeclarationStatementParser = do
   number <- integerParser
   return (IntVar number)
 
-statementParser :: Parser [Statement]
+elseStatementParser :: Parser [Statement]
+elseStatementParser = do
+  elseParser
+  elseStatements <- many statementParser
+  return elseStatements
+
+ifStatementParser :: Parser Statement
+ifStatementParser = do
+  ifParser
+  condition <- termParser
+  ifStatements <- many statementParser
+  elseStatements <- try elseStatementParser <|> (return [])
+  endIfParser
+  return (If condition ifStatements elseStatements)
+
+statementParser :: Parser Statement
 statementParser =
-  some
-    (assignmentParser <|> printStatementParser <|> intDeclarationStatementParser)
+  assignmentParser <|> printStatementParser <|> intDeclarationStatementParser
 
 programParser :: Parser Program
 programParser = do
   beginParser
-  program <- statementParser
+  program <- many statementParser
   endParser
   return program

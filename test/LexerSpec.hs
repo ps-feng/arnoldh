@@ -110,3 +110,47 @@ spec = do
     it "should parse integer" $ do
       parseMaybe intDeclarationStatementParser "HEY CHRISTMAS TREE 5" `shouldBe`
         Just (IntVar 5)
+    it "should not parse a string" $ do
+      parseMaybe intDeclarationStatementParser "HEY CHRISTMAS TREE \"hola\"" `shouldBe`
+        Nothing
+    it "should not parse a variable" $ do
+      parseMaybe intDeclarationStatementParser "HEY CHRISTMAS TREE a" `shouldBe`
+        Nothing
+  describe "if-else parser" $ do
+    it "should parse if statements without else" $ do
+      parseMaybe
+        ifStatementParser
+        "BECAUSE I'M GOING TO SAY PLEASE a \
+        \TALK TO THE HAND \"a is true\" \
+        \TALK TO THE HAND \"a' is unknown\" \
+        \YOU HAVE NO RESPECT FOR LOGIC" `shouldBe`
+        Just
+          (If
+             (Var "a")
+             [Print (String "a is true"), Print (String "a' is unknown")]
+             [])
+    it "should parse if statements with else" $ do
+      parseMaybe
+        ifStatementParser
+        "BECAUSE I'M GOING TO SAY PLEASE a \
+        \TALK TO THE HAND \"a is true\" \
+        \BULLSHIT \
+        \TALK TO THE HAND \"a is not true\" \
+        \TALK TO THE HAND \"a' might be\" \
+        \YOU HAVE NO RESPECT FOR LOGIC" `shouldBe`
+        Just
+          (If
+             (Var "a")
+             [Print (String "a is true")]
+             [Print (String "a is not true"), Print (String "a' might be")])
+    it "should parse empty if and else statements" $ do
+      parseMaybe
+        ifStatementParser
+        "BECAUSE I'M GOING TO SAY PLEASE a \
+        \BULLSHIT \
+        \YOU HAVE NO RESPECT FOR LOGIC" `shouldBe`
+        Just
+          (If
+             (Var "a")
+             []
+             [])
