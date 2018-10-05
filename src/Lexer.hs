@@ -86,11 +86,11 @@ spaceParser = space
 lexeme :: Parser a -> Parser a
 lexeme = L.lexeme spaceParser
 
-beginParser :: Parser String
-beginParser = lexeme (string arnBeginMain)
+beginMainParser :: Parser String
+beginMainParser = lexeme (string arnBeginMain)
 
-endParser :: Parser String
-endParser = lexeme (string arnEndMain)
+endMainParser :: Parser String
+endMainParser = lexeme (string arnEndMain)
 
 setValueParser :: Parser String
 setValueParser = lexeme (string arnSetValue)
@@ -137,8 +137,8 @@ reservedWords =
   binaryOperators ++
   [arnSetValue, arnPrint, arnIf, arnElse, arnEndIf, arnWhile, arnEndWhile]
 
-reservedWordParser :: Parser String
-reservedWordParser = foldr1 (<|>) (map (lexeme . try . string) reservedWords)
+reservedWordParser :: String -> Parser ()
+reservedWordParser word = (lexeme . try) (string word *> notFollowedBy alphaNumChar)
 
 identifierParser :: Parser String
 identifierParser = (lexeme . try) (p >>= check)
@@ -290,13 +290,47 @@ ifStatementParser = do
   endIfParser
   return (If condition ifStatements elseStatements)
 
+whileStatementParser :: Parser Statement
+whileStatementParser = do
+  whileParser
+  condition <- termParser
+  statements <- many statementParser
+  endWhileParser
+  return (While condition statements)
+
+-- call method statement, return statement, call read statement
 statementParser :: Parser Statement
 statementParser =
-  assignmentParser <|> printStatementParser <|> intDeclarationStatementParser
+  assignmentParser <|> printStatementParser <|> intDeclarationStatementParser <|>
+  ifStatementParser <|>
+  whileStatementParser
+
+mainMethodParser :: Parser AbstractMethod
+mainMethodParser = do
+  beginMainParser
+  statements <- many statementParser
+  endMainParser
+  return (Main statements)
+
+argumentParser :: Parser MethodArg
+argumentParser = do
+  reservedWordParser arnMethodArguments
+  argument <- stringParser
+  return (MethodArg argument)
+
+methodParser :: Parser AbstractMethod
+methodParser = do
+  reservedWordParser arnDeclareMethod
+  name <- identifierParser
+  arguments <- many argumentParser
+  statements <- many statementParser
+  reservedWordParser arnEndMethodDeclaration
+  return (Method arguments statements)
+
+abstractMethodParser :: Parser AbstractMethod
+abstractMethodParser = mainMethodParser
 
 programParser :: Parser Program
 programParser = do
-  beginParser
-  program <- many statementParser
-  endParser
-  return program
+  methods <- some abstractMethodParser
+  return methods

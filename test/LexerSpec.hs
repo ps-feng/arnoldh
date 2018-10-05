@@ -149,8 +149,12 @@ spec = do
         "BECAUSE I'M GOING TO SAY PLEASE a \
         \BULLSHIT \
         \YOU HAVE NO RESPECT FOR LOGIC" `shouldBe`
-        Just
-          (If
-             (Var "a")
-             []
-             [])
+        Just (If (Var "a") [] [])
+  describe "while parser" $ do
+    it "should parse while statements" $ do
+      parseMaybe
+        whileStatementParser
+        "STICK AROUND a \
+        \TALK TO THE HAND \"a is true\" \
+        \CHILL" `shouldBe`
+        Just (While (Var "a") [Print (String "a is true")])

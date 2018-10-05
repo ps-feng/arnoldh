@@ -1,6 +1,6 @@
 module AST where
 
-type Program = [Statement]
+type Program = [AbstractMethod]
 
 data Op
   = Add
@@ -28,10 +28,22 @@ data Statement
                Expr
   | Print Expr
   | IntVar Integer -- TODO: 16bit signed
-  | If Expr [Statement] [Statement]
-  | While Expr [Statement]
+  | If Expr
+       [Statement]
+       [Statement]
+  | While Expr
+          [Statement]
   deriving (Show, Eq)
 
+data MethodArg
+  = MethodArg String
+  deriving (Show, Eq)
+
+data AbstractMethod
+  = Main [Statement]
+  | Method [MethodArg] [Statement]
+  deriving (Show, Eq)
+--
 -- GRAMMAR DEFINITION
 --
 -- also in: https://github.com/jroweboy/ArnoldC.js/blob/master/src/main/arnoldc.pegjs
