@@ -7,17 +7,6 @@ import Text.Megaparsec (parseMaybe)
 
 spec :: Spec
 spec = do
-  describe "beginParser" $ do
-    it "should parse the begin command" $ do
-      parseMaybe beginParser "IT'S SHOWTIME" `shouldBe` Just "IT'S SHOWTIME"
-    it "should fail to parse anything else" $ do
-      parseMaybe beginParser "SOME OTHER COMMAND" `shouldBe` Nothing
-  describe "endParser" $ do
-    it "should parse the end command" $ do
-      parseMaybe endParser "YOU HAVE BEEN TERMINATED" `shouldBe`
-        Just "YOU HAVE BEEN TERMINATED"
-    it "should fail to parse anything else" $ do
-      parseMaybe endParser "SOME OTHER COMMAND" `shouldBe` Nothing
   describe "expression parser" $ do
     it "should parse all binary operations" $ do
       let parseInputs =
@@ -158,3 +147,57 @@ spec = do
         \TALK TO THE HAND \"a is true\" \
         \CHILL" `shouldBe`
         Just (While (Var "a") [Print (String "a is true")])
+  describe "method parser" $ do
+    it "should parse empty method" $ do
+      parseMaybe
+        methodParser
+        "LISTEN TO ME VERY CAREFULLY aMethod \
+        \HASTA LA VISTA, BABY" `shouldBe`
+        Just (Method "aMethod" [] [])
+    it "should parse non-void method with 2 arguments" $ do
+      parseMaybe
+        methodParser
+        "LISTEN TO ME VERY CAREFULLY aMethod \
+        \I NEED YOUR CLOTHES YOUR BOOTS AND YOUR MOTORCYCLE arg1 \
+        \I NEED YOUR CLOTHES YOUR BOOTS AND YOUR MOTORCYCLE arg2 \
+        \GIVE THESE PEOPLE AIR \
+        \GET TO THE CHOPPER myvar \
+        \HERE IS MY INVITATION 4 \
+        \GET UP b \
+        \YOU'RE FIRED 5 \
+        \GET DOWN 1 \
+        \HE HAD TO SPLIT send \
+        \ENOUGH TALK \
+        \HASTA LA VISTA, BABY" `shouldBe`
+        Just
+          (Method
+             "aMethod"
+             [MethodArg "arg1", MethodArg "arg2"]
+             [ (Assignment
+                  "myvar"
+                  (BinaryOp
+                     Divide
+                     (BinaryOp
+                        Minus
+                        (BinaryOp Mult (BinaryOp Add (Int 4) (Var "b")) (Int 5))
+                        (Int 1))
+                     (Var "send")))
+             ])
+  describe "program parser" $ do
+    it "should parse main and all other methods" $ do
+      parseMaybe
+        programParser
+        "LISTEN TO ME VERY CAREFULLY aMethod \
+        \HASTA LA VISTA, BABY \
+        \IT'S SHOWTIME \
+        \YOU HAVE BEEN TERMINATED \
+        \\
+        \LISTEN TO ME VERY CAREFULLY aMethod2 \
+        \I NEED YOUR CLOTHES YOUR BOOTS AND YOUR MOTORCYCLE arg1 \
+        \I NEED YOUR CLOTHES YOUR BOOTS AND YOUR MOTORCYCLE arg2 \
+        \HASTA LA VISTA, BABY" `shouldBe`
+        Just
+          [ Method "aMethod" [] []
+          , Main []
+          , Method "aMethod2" [MethodArg "arg1", MethodArg "arg2"] []
+          ]

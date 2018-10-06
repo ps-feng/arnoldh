@@ -5,13 +5,9 @@ module Lib
 import Lexer
 import Text.Megaparsec
 
-input = "BECAUSE I'M GOING TO SAY PLEASE a \
-        \TALK TO THE HAND \"a is true\" \
-        \TALK TO THE HAND \"b might be true\" \
-        \BULLSHIT \
-        \YOU HAVE NO RESPECT FOR LOGIC"
+input = "I NEED YOUR CLOTHES YOUR BOOTS AND YOUR MOTORCYCLE arg1"
 
 someFunc :: IO ()
 someFunc = do
-    parseTest ifStatementParser input
+    parseTest argumentParser input
 

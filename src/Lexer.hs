@@ -315,20 +315,26 @@ mainMethodParser = do
 argumentParser :: Parser MethodArg
 argumentParser = do
   reservedWordParser arnMethodArguments
-  argument <- stringParser
+  argument <- identifierParser
   return (MethodArg argument)
+
+methodStatementsParser :: Parser [Statement]
+methodStatementsParser = do
+  reservedWordParser arnNonVoidMethod
+  statements <- many statementParser
+  return statements
 
 methodParser :: Parser AbstractMethod
 methodParser = do
   reservedWordParser arnDeclareMethod
   name <- identifierParser
   arguments <- many argumentParser
-  statements <- many statementParser
+  statements <- try methodStatementsParser <|> (return [])
   reservedWordParser arnEndMethodDeclaration
-  return (Method arguments statements)
+  return (Method name arguments statements)
 
 abstractMethodParser :: Parser AbstractMethod
-abstractMethodParser = mainMethodParser
+abstractMethodParser = mainMethodParser <|> methodParser
 
 programParser :: Parser Program
 programParser = do

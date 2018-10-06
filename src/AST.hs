@@ -35,13 +35,15 @@ data Statement
           [Statement]
   deriving (Show, Eq)
 
-data MethodArg
-  = MethodArg String
+data MethodArg =
+  MethodArg String
   deriving (Show, Eq)
 
 data AbstractMethod
   = Main [Statement]
-  | Method [MethodArg] [Statement]
+  | Method String
+           [MethodArg]
+           [Statement]
   deriving (Show, Eq)
 --
 -- GRAMMAR DEFINITION
