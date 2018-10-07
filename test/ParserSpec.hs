@@ -1,4 +1,4 @@
-module LexerSpec where
+module ParserSpec where
 
 import AST
 import Parser
