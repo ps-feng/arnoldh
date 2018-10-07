@@ -22,12 +22,23 @@ arnAssignVariableFromMethodCall = "GET YOUR ASS TO MARS"
 -- http://akashagrawal.me/beginners-guide-to-megaparsec/
 type Parser = Parsec Void String
 
+-- We define a space as a regular space or a tab character, as that's what
+-- can separate an instruction and the identifier it operates on:
+-- e.g. "LISTEN TO ME CAREFULLY   methodName"
 spaceConsumer :: Parser ()
 spaceConsumer = void $ many $ oneOf [' ', '\t']
 
+-- Uses default built-in space skipper, which includes newlines.
+eolConsumer :: Parser ()
+eolConsumer = space1
+
+trimEol :: Parser a -> Parser a
+trimEol p = p <* (some space1)
+
 -- this will trim all the whitespace after consuming the parsed lexeme
+-- and consume at least one end of line
 lexeme :: Parser a -> Parser a
-lexeme = L.lexeme spaceConsumer
+lexeme = (trimEol . (L.lexeme spaceConsumer))
 
 symbol :: String -> Parser String
 symbol = L.symbol spaceConsumer
@@ -38,9 +49,10 @@ integerParser = lexeme L.decimal
 stringLiteralParser :: Parser String
 stringLiteralParser = lexeme (char '"' >> manyTill L.charLiteral (char '"'))
 
-reservedWordParser :: String -> Parser ()
-reservedWordParser word =
-  (lexeme . try) (string word *> notFollowedBy alphaNumChar)
+booleanTermParser :: Parser Expr
+booleanTermParser =
+  (Int 0 <$ trimEol (symbol "@I LIED")) <|>
+  (Int 1 <$ trimEol (symbol "@NO PROBLEMO"))
 
 identifierParser :: Parser String
 identifierParser = (lexeme . try) p
@@ -50,10 +62,6 @@ identifierParser = (lexeme . try) p
 binaryOpTermParser :: Parser Expr
 binaryOpTermParser =
   Int <$> integerParser <|> booleanTermParser <|> Var <$> identifierParser
-
-booleanTermParser :: Parser Expr
-booleanTermParser =
-  (Int 0 <$ symbol "@I LIED") <|> (Int 1 <$ symbol "@NO PROBLEMO")
 
 ops :: [(Op, String)]
 ops =
@@ -84,6 +92,7 @@ assignmentParser = do
   id <- identifierParser
   expr <- expressionParser
   symbol "ENOUGH TALK"
+  eolConsumer
   return (Assignment id expr)
 
 termParser :: Parser Expr
@@ -110,11 +119,13 @@ ifStatementParser = do
   ifStatements <- many statementParser
   elseStatements <- try elseStatementParser <|> (return [])
   symbol "YOU HAVE NO RESPECT FOR LOGIC"
+  eolConsumer
   return (If condition ifStatements elseStatements)
 
 elseStatementParser :: Parser [Statement]
 elseStatementParser = do
   symbol "BULLSHIT"
+  eolConsumer
   elseStatements <- many statementParser
   return elseStatements
 
@@ -129,8 +140,7 @@ whileStatementParser = do
 returnStatementParser :: Parser Statement
 returnStatementParser = do
   symbol "I'LL BE BACK"
-  retVal <- optional (try termParser)
-  eol
+  retVal <- (eolConsumer *> return Nothing) <|> optional (try termParser)
   return (Return retVal)
 
 statementParser :: Parser Statement
@@ -143,8 +153,10 @@ statementParser =
 mainMethodParser :: Parser AbstractMethod
 mainMethodParser = do
   symbol "IT'S SHOWTIME"
+  eolConsumer
   statements <- many statementParser
   symbol "YOU HAVE BEEN TERMINATED"
+  eolConsumer
   return (Main statements)
 
 argumentParser :: Parser MethodArg
@@ -156,6 +168,7 @@ argumentParser = do
 methodStatementsParser :: Parser [Statement]
 methodStatementsParser = do
   symbol "GIVE THESE PEOPLE AIR"
+  eolConsumer
   statements <- many statementParser
   return statements
 
@@ -166,6 +179,7 @@ methodParser = do
   arguments <- many argumentParser
   statements <- try methodStatementsParser <|> (return [])
   symbol "HASTA LA VISTA, BABY"
+  eolConsumer
   return (Method name arguments statements)
 
 abstractMethodParser :: Parser AbstractMethod
