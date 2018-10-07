@@ -1,6 +1,7 @@
 module Parser where
 
 import AST
+import Data.Functor (void)
 import Data.Void
 import Text.Megaparsec
 import Text.Megaparsec.Char
@@ -12,8 +13,6 @@ arnParseError = "WHAT THE FUCK DID I DO WRONG"
 arnRead =
   "I WANT TO ASK YOU A BUNCH OF QUESTIONS AND I WANT TO HAVE THEM ANSWERED IMMEDIATELY"
 
-arnReturn = "I'LL BE BACK"
-
 arnCallMethod = "DO IT NOW"
 
 arnAssignVariableFromMethodCall = "GET YOUR ASS TO MARS"
@@ -24,7 +23,7 @@ arnAssignVariableFromMethodCall = "GET YOUR ASS TO MARS"
 type Parser = Parsec Void String
 
 spaceConsumer :: Parser ()
-spaceConsumer = space
+spaceConsumer = void $ many $ oneOf [' ', '\t']
 
 -- this will trim all the whitespace after consuming the parsed lexeme
 lexeme :: Parser a -> Parser a
@@ -127,12 +126,19 @@ whileStatementParser = do
   symbol "CHILL"
   return (While condition statements)
 
--- call method statement, return statement, call read statement
+returnStatementParser :: Parser Statement
+returnStatementParser = do
+  symbol "I'LL BE BACK"
+  retVal <- optional (try termParser)
+  eol
+  return (Return retVal)
+
 statementParser :: Parser Statement
 statementParser =
   assignmentParser <|> printStatementParser <|> intDeclarationStatementParser <|>
   ifStatementParser <|>
-  whileStatementParser
+  whileStatementParser <|>
+  returnStatementParser
 
 mainMethodParser :: Parser AbstractMethod
 mainMethodParser = do

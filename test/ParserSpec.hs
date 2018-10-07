@@ -183,6 +183,22 @@ spec = do
                         (Int 1))
                      (Var "send")))
              ])
+    it "should parse method with empty return statement" $ do
+      parseMaybe
+        methodParser
+        "LISTEN TO ME VERY CAREFULLY aMethod \
+        \GIVE THESE PEOPLE AIR \
+        \I'LL BE BACK\n\
+        \HASTA LA VISTA, BABY" `shouldBe`
+        Just (Method "aMethod" [] [(Return Nothing)])
+    it "should parse method with return statement with literal" $ do
+      parseMaybe
+        methodParser
+        "LISTEN TO ME VERY CAREFULLY aMethod \
+        \GIVE THESE PEOPLE AIR \
+        \I'LL BE BACK 4\n\
+        \HASTA LA VISTA, BABY" `shouldBe`
+        Just (Method "aMethod" [] [(Return (Just (Int 4)))])
   describe "program parser" $ do
     it "should parse main and all other methods" $ do
       parseMaybe
