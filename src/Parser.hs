@@ -1,4 +1,4 @@
-module Lexer where
+module Parser where
 
 import AST
 import Data.Void

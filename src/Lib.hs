@@ -2,7 +2,7 @@ module Lib
     ( someFunc
     ) where
 
-import Lexer
+import Parser
 import Text.Megaparsec
 
 input = "I NEED YOUR CLOTHES YOUR BOOTS AND YOUR MOTORCYCLE arg1"

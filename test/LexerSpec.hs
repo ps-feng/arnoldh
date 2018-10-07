@@ -1,7 +1,7 @@
 module LexerSpec where
 
 import AST
-import Lexer
+import Parser
 import Test.Hspec
 import Text.Megaparsec (parseMaybe)
 
