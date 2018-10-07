@@ -79,12 +79,15 @@ arnAssignVariableFromMethodCall = "GET YOUR ASS TO MARS"
 -- http://akashagrawal.me/beginners-guide-to-megaparsec/
 type Parser = Parsec Void String
 
-spaceParser :: Parser ()
-spaceParser = space
+spaceConsumer :: Parser ()
+spaceConsumer = space
 
 -- this will trim all the whitespace after consuming the parsed lexeme
 lexeme :: Parser a -> Parser a
-lexeme = L.lexeme spaceParser
+lexeme = L.lexeme spaceConsumer
+
+symbol :: String -> Parser String
+symbol = L.symbol spaceConsumer
 
 beginMainParser :: Parser String
 beginMainParser = lexeme (string arnBeginMain)
@@ -138,7 +141,8 @@ reservedWords =
   [arnSetValue, arnPrint, arnIf, arnElse, arnEndIf, arnWhile, arnEndWhile]
 
 reservedWordParser :: String -> Parser ()
-reservedWordParser word = (lexeme . try) (string word *> notFollowedBy alphaNumChar)
+reservedWordParser word =
+  (lexeme . try) (string word *> notFollowedBy alphaNumChar)
 
 identifierParser :: Parser String
 identifierParser = (lexeme . try) (p >>= check)
@@ -171,29 +175,6 @@ endWhileParser :: Parser String
 endWhileParser = lexeme (string arnEndWhile)
 
 --- Parser after this
-ops :: [(String, Op)]
-ops =
-  [ (arnPlusOperator, Add)
-  , (arnMinusOperator, Minus)
-  , (arnDivisionOperator, Divide)
-  , (arnMultiplicationOperator, Mult)
-  , (arnModulo, Modulo)
-  -- logical operators
-  , (arnOr, Or)
-  , (arnAnd, And)
-  -- comparison
-  , (arnEqualTo, EqualTo)
-  , (arnGreaterThan, GreaterThan)
-  ]
-
-opMapper :: Parser String -> Parser Op
-opMapper p =
-  p >>=
-  (\op ->
-     case lookup op ops of
-       Just x -> return x
-       Nothing -> fail "unknown operator")
-
 intToIntConst :: Parser Integer -> Parser Expr
 intToIntConst x = x >>= \x' -> return (Int x')
 
@@ -221,34 +202,28 @@ binaryOpTermParser =
 booleanTermParser :: Parser Expr
 booleanTermParser = booleanToIntConst booleanParser
 
-data PartialExpr =
-  PartialExpr Op
-              Expr
+ops :: [(Op, String)]
+ops =
+  [ (Add, "GET UP")
+  , (Minus, "GET DOWN")
+  , (Divide, "HE HAD TO SPLIT")
+  , (Mult, "YOU'RE FIRED")
+  , (Modulo, "I LET HIM GO")
+  -- logical operators
+  , (Or, "CONSIDER THAT A DIVORCE")
+  , (And, "KNOCK KNOCK")
+  -- comparison
+  , (EqualTo, "YOU ARE NOT YOU YOU ARE ME")
+  , (GreaterThan, "LET OFF SOME STEAM BENNET")
+  ]
 
-partialBinaryOperationParser :: Parser PartialExpr
-partialBinaryOperationParser = do
-  op <- opMapper binaryOperatorParser
-  a <- binaryOpTermParser
-  return (PartialExpr op a)
-
-binaryExpressionParser :: Expr -> Parser Expr
-binaryExpressionParser startValue = do
-  partials <- many partialBinaryOperationParser
-  expr <- binaryExpressionParser' startValue (return partials)
-  return expr
-
-binaryExpressionParser' :: Expr -> Parser [PartialExpr] -> Parser Expr
-binaryExpressionParser' startExpr partialsParser = do
-  partials <- partialsParser
-  return $
-    foldl (\acc (PartialExpr op a) -> BinaryOp op acc a) startExpr partials
+operatorTable :: [[Operator Parser Expr]]
+operatorTable = [map (\(op, sym) -> InfixL (BinaryOp op <$ symbol sym)) ops]
 
 expressionParser :: Parser Expr
 expressionParser = do
   setValueParser
-  startValue <- binaryOpTermParser
-  expr <- binaryExpressionParser startValue
-  return expr
+  makeExprParser binaryOpTermParser operatorTable
 
 assignmentParser :: Parser Statement
 assignmentParser = do

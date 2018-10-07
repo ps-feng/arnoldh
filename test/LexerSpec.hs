@@ -17,11 +17,11 @@ spec = do
                    ("HERE IS MY INVITATION 4 " ++ opStr ++ " b"))
               opStrings
             where
-              opStrings = map fst ops
+              opStrings = map snd ops
       let astResults =
             map (\astOp -> Just (BinaryOp astOp (Int 4) (Var "b"))) astOps
             where
-              astOps = map snd ops
+              astOps = map fst ops
       parseInputs `shouldBe` astResults
     it "should parse chained binary operations" $
       -- (((4 + b) > 3) && 1) || 0
