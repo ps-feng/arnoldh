@@ -33,6 +33,7 @@ data Statement
        [Statement]
   | While Expr
           [Statement]
+  | CallRead String
   | Return (Maybe Expr)
   deriving (Show, Eq)
 

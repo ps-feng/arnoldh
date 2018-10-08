@@ -8,15 +8,6 @@ import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
 import Text.Megaparsec.Expr
 
-arnParseError = "WHAT THE FUCK DID I DO WRONG"
-
-arnRead =
-  "I WANT TO ASK YOU A BUNCH OF QUESTIONS AND I WANT TO HAVE THEM ANSWERED IMMEDIATELY"
-
-arnCallMethod = "DO IT NOW"
-
-arnAssignVariableFromMethodCall = "GET YOUR ASS TO MARS"
-
 -- Useful links
 -- https://markkarpov.com/megaparsec/parsing-simple-imperative-language.html
 -- http://akashagrawal.me/beginners-guide-to-megaparsec/
@@ -89,11 +80,10 @@ expressionParser = do
 assignmentParser :: Parser Statement
 assignmentParser = do
   symbol "GET TO THE CHOPPER"
-  id <- identifierParser
+  var <- identifierParser
   expr <- expressionParser
-  symbol "ENOUGH TALK"
-  eolConsumer
-  return (Assignment id expr)
+  symbol "ENOUGH TALK" >> eolConsumer
+  return (Assignment var expr)
 
 termParser :: Parser Expr
 termParser =
@@ -118,14 +108,12 @@ ifStatementParser = do
   condition <- termParser
   ifStatements <- many statementParser
   elseStatements <- try elseStatementParser <|> (return [])
-  symbol "YOU HAVE NO RESPECT FOR LOGIC"
-  eolConsumer
+  symbol "YOU HAVE NO RESPECT FOR LOGIC" >> eolConsumer
   return (If condition ifStatements elseStatements)
 
 elseStatementParser :: Parser [Statement]
 elseStatementParser = do
-  symbol "BULLSHIT"
-  eolConsumer
+  symbol "BULLSHIT" >> eolConsumer
   elseStatements <- many statementParser
   return elseStatements
 
@@ -143,20 +131,29 @@ returnStatementParser = do
   retVal <- (eolConsumer *> return Nothing) <|> optional (try termParser)
   return (Return retVal)
 
+callReadMethodStatementParser :: Parser Statement
+callReadMethodStatementParser = do
+  symbol "GET YOUR ASS TO MARS"
+  var <- identifierParser
+  symbol "DO IT NOW" >> eolConsumer
+  symbol
+    "I WANT TO ASK YOU A BUNCH OF QUESTIONS AND I WANT TO HAVE THEM ANSWERED IMMEDIATELY"
+  eolConsumer
+  return (CallRead var)
+
 statementParser :: Parser Statement
 statementParser =
   assignmentParser <|> printStatementParser <|> intDeclarationStatementParser <|>
   ifStatementParser <|>
   whileStatementParser <|>
-  returnStatementParser
+  returnStatementParser <|>
+  callReadMethodStatementParser
 
 mainMethodParser :: Parser AbstractMethod
 mainMethodParser = do
-  symbol "IT'S SHOWTIME"
-  eolConsumer
+  symbol "IT'S SHOWTIME" >> eolConsumer
   statements <- many statementParser
-  symbol "YOU HAVE BEEN TERMINATED"
-  eolConsumer
+  symbol "YOU HAVE BEEN TERMINATED" >> eolConsumer
   return (Main statements)
 
 argumentParser :: Parser MethodArg
@@ -167,8 +164,7 @@ argumentParser = do
 
 methodStatementsParser :: Parser [Statement]
 methodStatementsParser = do
-  symbol "GIVE THESE PEOPLE AIR"
-  eolConsumer
+  symbol "GIVE THESE PEOPLE AIR" >> eolConsumer
   statements <- many statementParser
   return statements
 
@@ -178,13 +174,13 @@ methodParser = do
   name <- identifierParser
   arguments <- many argumentParser
   statements <- try methodStatementsParser <|> (return [])
-  symbol "HASTA LA VISTA, BABY"
-  eolConsumer
+  symbol "HASTA LA VISTA, BABY" >> eolConsumer
   return (Method name arguments statements)
 
 abstractMethodParser :: Parser AbstractMethod
 abstractMethodParser = mainMethodParser <|> methodParser
 
+-- TODO: parse error "WHAT THE FUCK DID I DO WRONG"
 programParser :: Parser Program
 programParser = do
   methods <- some abstractMethodParser

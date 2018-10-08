@@ -199,6 +199,14 @@ spec = do
         \I'LL BE BACK 4\n\
         \HASTA LA VISTA, BABY\n" `shouldBe`
         Just (Method "aMethod" [] [(Return (Just (Int 4)))])
+  describe "call read method parser" $ do
+    it "should parse it correctly" $ do
+      parseMaybe
+        callReadMethodStatementParser
+        "GET YOUR ASS TO MARS input\n\
+        \DO IT NOW\n\
+        \I WANT TO ASK YOU A BUNCH OF QUESTIONS AND I WANT TO HAVE THEM ANSWERED IMMEDIATELY\n" `shouldBe`
+        Just (CallRead "input")
   describe "program parser" $ do
     it "should parse main and all other methods" $ do
       parseMaybe
