@@ -23,13 +23,9 @@ spaceConsumer = void $ many $ oneOf [' ', '\t']
 eolConsumer :: Parser ()
 eolConsumer = space1
 
-trimEol :: Parser a -> Parser a
-trimEol p = p <* (some space1)
-
 -- this will trim all the whitespace after consuming the parsed lexeme
--- and consume at least one end of line
 lexeme :: Parser a -> Parser a
-lexeme = (trimEol . (L.lexeme spaceConsumer))
+lexeme = L.lexeme spaceConsumer
 
 symbol :: String -> Parser String
 symbol = L.symbol spaceConsumer
@@ -42,16 +38,15 @@ stringLiteralParser = lexeme (char '"' >> manyTill L.charLiteral (char '"'))
 
 booleanTermParser :: Parser Expr
 booleanTermParser =
-  (Int 0 <$ trimEol (symbol "@I LIED")) <|>
-  (Int 1 <$ trimEol (symbol "@NO PROBLEMO"))
+  (Int 0 <$ symbol "@I LIED") <|> (Int 1 <$ symbol "@NO PROBLEMO")
 
 identifierParser :: Parser String
 identifierParser = (lexeme . try) p
   where
     p = (:) <$> letterChar <*> many alphaNumChar
 
-binaryOpTermParser :: Parser Expr
-binaryOpTermParser =
+operandParser :: Parser Expr
+operandParser =
   Int <$> integerParser <|> booleanTermParser <|> Var <$> identifierParser
 
 ops :: [(Op, String)]
@@ -75,37 +70,35 @@ operatorTable = [map (\(op, sym) -> InfixL (BinaryOp op <$ symbol sym)) ops]
 expressionParser :: Parser Expr
 expressionParser = do
   symbol "HERE IS MY INVITATION"
-  makeExprParser binaryOpTermParser operatorTable
+  makeExprParser (operandParser <* eolConsumer) operatorTable
 
 assignmentParser :: Parser Statement
 assignmentParser = do
   symbol "GET TO THE CHOPPER"
-  var <- identifierParser
+  var <- identifierParser <* eolConsumer
   expr <- expressionParser
   symbol "ENOUGH TALK" >> eolConsumer
   return (Assignment var expr)
 
-termParser :: Parser Expr
-termParser =
-  Int <$> integerParser <|> Var <$> identifierParser <|>
-  String <$> stringLiteralParser
-
 printStatementParser :: Parser Statement
 printStatementParser = do
   symbol "TALK TO THE HAND"
-  term <- termParser
+  term <-
+    (try operandParser <|> (String <$> stringLiteralParser)) <* eolConsumer
   return (Print term)
 
 intDeclarationStatementParser :: Parser Statement
 intDeclarationStatementParser = do
   symbol "HEY CHRISTMAS TREE"
-  number <- integerParser
-  return (IntVar number)
+  var <- identifierParser <* eolConsumer
+  symbol "YOU SET US UP"
+  number <- integerParser <* eolConsumer
+  return (IntVar var number)
 
 ifStatementParser :: Parser Statement
 ifStatementParser = do
   symbol "BECAUSE I'M GOING TO SAY PLEASE"
-  condition <- termParser
+  condition <- operandParser <* eolConsumer
   ifStatements <- many statementParser
   elseStatements <- try elseStatementParser <|> (return [])
   symbol "YOU HAVE NO RESPECT FOR LOGIC" >> eolConsumer
@@ -120,21 +113,32 @@ elseStatementParser = do
 whileStatementParser :: Parser Statement
 whileStatementParser = do
   symbol "STICK AROUND"
-  condition <- termParser
+  condition <- operandParser <* eolConsumer
   statements <- many statementParser
   symbol "CHILL"
   return (While condition statements)
 
+callMethodStatementParser :: Parser Statement
+callMethodStatementParser = do
+  var <-
+    optional (symbol "GET YOUR ASS TO MARS" >> identifierParser <* eolConsumer)
+  symbol "DO IT NOW"
+  methodName <- identifierParser
+  args <- many operandParser <* eolConsumer
+  return (CallMethod var methodName args)
+
 returnStatementParser :: Parser Statement
 returnStatementParser = do
   symbol "I'LL BE BACK"
-  retVal <- (eolConsumer *> return Nothing) <|> optional (try termParser)
+  retVal <-
+    (eolConsumer *> return Nothing) <|>
+    optional (try operandParser <* eolConsumer)
   return (Return retVal)
 
 callReadMethodStatementParser :: Parser Statement
 callReadMethodStatementParser = do
-  symbol "GET YOUR ASS TO MARS"
-  var <- identifierParser
+  symbol "GET YOUR ASS TO MARS" -- todo: make this optional
+  var <- identifierParser <* eolConsumer
   symbol "DO IT NOW" >> eolConsumer
   symbol
     "I WANT TO ASK YOU A BUNCH OF QUESTIONS AND I WANT TO HAVE THEM ANSWERED IMMEDIATELY"
@@ -146,6 +150,7 @@ statementParser =
   assignmentParser <|> printStatementParser <|> intDeclarationStatementParser <|>
   ifStatementParser <|>
   whileStatementParser <|>
+  callMethodStatementParser <|>
   returnStatementParser <|>
   callReadMethodStatementParser
 
@@ -159,7 +164,7 @@ mainMethodParser = do
 argumentParser :: Parser MethodArg
 argumentParser = do
   symbol "I NEED YOUR CLOTHES YOUR BOOTS AND YOUR MOTORCYCLE"
-  argument <- identifierParser
+  argument <- identifierParser <* eolConsumer
   return (MethodArg argument)
 
 methodStatementsParser :: Parser [Statement]
@@ -171,7 +176,7 @@ methodStatementsParser = do
 methodParser :: Parser AbstractMethod
 methodParser = do
   symbol "LISTEN TO ME VERY CAREFULLY"
-  name <- identifierParser
+  name <- identifierParser <* eolConsumer
   arguments <- many argumentParser
   statements <- try methodStatementsParser <|> (return [])
   symbol "HASTA LA VISTA, BABY" >> eolConsumer

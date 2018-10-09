@@ -41,6 +41,7 @@ spec = do
                 (BinaryOp GreaterThan (BinaryOp Add (Int 4) (Var "b")) (Int 3))
                 (Int 1))
              (Int 0))
+  --
   describe "assignment parser" $ do
     it "should fail if assignment statements are not provided" $ do
       parseMaybe
@@ -82,6 +83,7 @@ spec = do
                    (BinaryOp Mult (BinaryOp Add (Int 4) (Var "b")) (Int 5))
                    (Int 1))
                 (Var "send")))
+  --
   describe "print statement parser" $ do
     it "should parse double-quoted strings" $ do
       parseMaybe printStatementParser "TALK TO THE HAND \"Hello\"\n" `shouldBe`
@@ -95,16 +97,27 @@ spec = do
     it "should parse a variable reference" $ do
       parseMaybe printStatementParser "TALK TO THE HAND a\n" `shouldBe`
         Just (Print (Var "a"))
+  --
   describe "int declaration parser" $ do
     it "should parse integer" $ do
-      parseMaybe intDeclarationStatementParser "HEY CHRISTMAS TREE 5\n" `shouldBe`
-        Just (IntVar 5)
+      parseMaybe
+        intDeclarationStatementParser
+        "HEY CHRISTMAS TREE someVar\n\
+        \YOU SET US UP 5\n" `shouldBe`
+        Just (IntVar "someVar" 5)
     it "should not parse a string" $ do
-      parseMaybe intDeclarationStatementParser "HEY CHRISTMAS TREE \"hola\"\n" `shouldBe`
+      parseMaybe
+        intDeclarationStatementParser
+        "HEY CHRISTMAS TREE someVar\n\
+        \YOU SET US UP \"hola\"\n" `shouldBe`
         Nothing
-    it "should not parse a variable" $ do
-      parseMaybe intDeclarationStatementParser "HEY CHRISTMAS TREE a\n" `shouldBe`
+    it "should not parse a number as a variable" $ do
+      parseMaybe
+        intDeclarationStatementParser
+        "HEY CHRISTMAS TREE 4\n\
+        \YOU SET US UP\n" `shouldBe`
         Nothing
+  --
   describe "if-else parser" $ do
     it "should parse if statements without else" $ do
       parseMaybe
@@ -139,6 +152,7 @@ spec = do
         \BULLSHIT\n\
         \YOU HAVE NO RESPECT FOR LOGIC\n" `shouldBe`
         Just (If (Var "a") [] [])
+  --
   describe "while parser" $ do
     it "should parse while statements" $ do
       parseMaybe
@@ -147,6 +161,7 @@ spec = do
         \TALK TO THE HAND \"a is true\"\n\
         \CHILL" `shouldBe`
         Just (While (Var "a") [Print (String "a is true")])
+  --
   describe "method parser" $ do
     it "should parse empty method" $ do
       parseMaybe
@@ -199,6 +214,27 @@ spec = do
         \I'LL BE BACK 4\n\
         \HASTA LA VISTA, BABY\n" `shouldBe`
         Just (Method "aMethod" [] [(Return (Just (Int 4)))])
+  --
+  describe "call method parser" $ do
+    it "should parse a method without var assignment and no arguments" $ do
+      parseMaybe callMethodStatementParser "DO IT NOW aMethod\n" `shouldBe`
+        Just (CallMethod Nothing "aMethod" [])
+    it "should parse a method without var assignment and 2 arguments" $ do
+      parseMaybe callMethodStatementParser "DO IT NOW aMethod 3 4\n" `shouldBe`
+        Just (CallMethod Nothing "aMethod" [Int 3, Int 4])
+    it "should parse a method with var assignment and no arguments" $ do
+      parseMaybe
+        callMethodStatementParser
+        "GET YOUR ASS TO MARS someVar\n\
+        \DO IT NOW aMethod\n" `shouldBe`
+        Just (CallMethod (Just "someVar") "aMethod" [])
+    it "should parse a method with var assignment and 3 arguments" $ do
+      parseMaybe
+        callMethodStatementParser
+        "GET YOUR ASS TO MARS someVar\n\
+        \DO IT NOW aMethod 10 @I LIED b \n" `shouldBe`
+        Just (CallMethod (Just "someVar") "aMethod" [Int 10, Int 0, Var "b"])
+  --
   describe "call read method parser" $ do
     it "should parse it correctly" $ do
       parseMaybe
@@ -207,6 +243,7 @@ spec = do
         \DO IT NOW\n\
         \I WANT TO ASK YOU A BUNCH OF QUESTIONS AND I WANT TO HAVE THEM ANSWERED IMMEDIATELY\n" `shouldBe`
         Just (CallRead "input")
+  --
   describe "program parser" $ do
     it "should parse main and all other methods" $ do
       parseMaybe

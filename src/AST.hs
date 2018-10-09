@@ -1,6 +1,8 @@
 module AST where
 
 type Program = [AbstractMethod]
+type MethodName = String
+type VarName = String
 
 data Op
   = Add
@@ -24,16 +26,17 @@ data Expr
   deriving (Show, Eq)
 
 data Statement
-  = Assignment String
+  = Assignment VarName
                Expr
   | Print Expr
-  | IntVar Integer -- TODO: 16bit signed
+  | IntVar VarName Integer -- TODO: 16bit signed
   | If Expr
        [Statement]
        [Statement]
   | While Expr
           [Statement]
-  | CallRead String
+  | CallMethod (Maybe VarName) MethodName [Expr]
+  | CallRead VarName
   | Return (Maybe Expr)
   deriving (Show, Eq)
 
@@ -43,7 +46,7 @@ data MethodArg =
 
 data AbstractMethod
   = Main [Statement]
-  | Method String
+  | Method MethodName
            [MethodArg]
            [Statement]
   deriving (Show, Eq)
