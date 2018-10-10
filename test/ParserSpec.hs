@@ -99,18 +99,30 @@ spec = do
         Just (Print (Var "a"))
   --
   describe "int declaration parser" $ do
-    it "should parse integer" $ do
+    it "should parse signed integer" $ do
       parseMaybe
         intDeclarationStatementParser
         "HEY CHRISTMAS TREE someVar\n\
-        \YOU SET US UP 5\n" `shouldBe`
-        Just (IntVar "someVar" 5)
+        \YOU SET US UP -5\n" `shouldBe`
+        Just (IntVar "someVar" (Int (-5)))
     it "should not parse a string" $ do
       parseMaybe
         intDeclarationStatementParser
         "HEY CHRISTMAS TREE someVar\n\
         \YOU SET US UP \"hola\"\n" `shouldBe`
         Nothing
+    it "should parse a variable" $ do
+      parseMaybe
+        intDeclarationStatementParser
+        "HEY CHRISTMAS TREE someVar\n\
+        \YOU SET US UP a\n" `shouldBe`
+        Just (IntVar "someVar" (Var "a"))
+    it "should parse boolean" $ do
+      parseMaybe
+        intDeclarationStatementParser
+        "HEY CHRISTMAS TREE someVar\n\
+        \YOU SET US UP @I LIED\n" `shouldBe`
+        Just (IntVar "someVar" (Int 0))
     it "should not parse a number as a variable" $ do
       parseMaybe
         intDeclarationStatementParser

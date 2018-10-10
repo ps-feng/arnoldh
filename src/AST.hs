@@ -29,14 +29,14 @@ data Statement
   = Assignment VarName
                Expr
   | Print Expr
-  | IntVar VarName Integer -- TODO: 16bit signed
+  | IntVar VarName Expr
   | If Expr
        [Statement]
        [Statement]
   | While Expr
           [Statement]
   | CallMethod (Maybe VarName) MethodName [Expr]
-  | CallRead VarName
+  | CallRead VarName -- not sure if VarName should be optional
   | Return (Maybe Expr)
   deriving (Show, Eq)
 

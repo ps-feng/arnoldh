@@ -14,7 +14,7 @@ import Text.Megaparsec.Expr
 type Parser = Parsec Void String
 
 -- We define a space as a regular space or a tab character, as that's what
--- can separate an instruction and the identifier it operates on:
+-- can separate an instruction and the identifier it applies to:
 -- e.g. "LISTEN TO ME CAREFULLY   methodName"
 spaceConsumer :: Parser ()
 spaceConsumer = void $ many $ oneOf [' ', '\t']
@@ -33,6 +33,9 @@ symbol = L.symbol spaceConsumer
 integerParser :: Parser Integer
 integerParser = lexeme L.decimal
 
+signedIntegerParser :: Parser Integer
+signedIntegerParser = L.signed (return ()) integerParser
+
 stringLiteralParser :: Parser String
 stringLiteralParser = lexeme (char '"' >> manyTill L.charLiteral (char '"'))
 
@@ -47,7 +50,7 @@ identifierParser = (lexeme . try) p
 
 operandParser :: Parser Expr
 operandParser =
-  Int <$> integerParser <|> booleanTermParser <|> Var <$> identifierParser
+  Int <$> signedIntegerParser <|> booleanTermParser <|> Var <$> identifierParser
 
 ops :: [(Op, String)]
 ops =
@@ -92,7 +95,7 @@ intDeclarationStatementParser = do
   symbol "HEY CHRISTMAS TREE"
   var <- identifierParser <* eolConsumer
   symbol "YOU SET US UP"
-  number <- integerParser <* eolConsumer
+  number <- operandParser <* eolConsumer
   return (IntVar var number)
 
 ifStatementParser :: Parser Statement
@@ -137,7 +140,7 @@ returnStatementParser = do
 
 callReadMethodStatementParser :: Parser Statement
 callReadMethodStatementParser = do
-  symbol "GET YOUR ASS TO MARS" -- todo: make this optional
+  symbol "GET YOUR ASS TO MARS"
   var <- identifierParser <* eolConsumer
   symbol "DO IT NOW" >> eolConsumer
   symbol
