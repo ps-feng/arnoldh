@@ -33,8 +33,11 @@ symbol = L.symbol spaceConsumer
 integerParser :: Parser Integer
 integerParser = lexeme L.decimal
 
+voidConsumer :: Parser ()
+voidConsumer = return ()
+
 signedIntegerParser :: Parser Integer
-signedIntegerParser = L.signed (return ()) integerParser
+signedIntegerParser = L.signed voidConsumer integerParser
 
 stringLiteralParser :: Parser String
 stringLiteralParser = lexeme (char '"' >> manyTill L.charLiteral (char '"'))
