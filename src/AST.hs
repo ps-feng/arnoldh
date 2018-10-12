@@ -2,6 +2,7 @@ module AST where
 
 type Program = [AbstractMethod]
 type MethodName = String
+type MethodArg = Expr
 type VarName = String
 
 data Op
@@ -38,10 +39,6 @@ data Statement
   | CallMethod (Maybe VarName) MethodName [Expr]
   | CallRead VarName -- not sure if VarName should be optional
   | Return (Maybe Expr)
-  deriving (Show, Eq)
-
-data MethodArg =
-  MethodArg String
   deriving (Show, Eq)
 
 data AbstractMethod

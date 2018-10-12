@@ -138,11 +138,7 @@ spec = do
         \TALK TO THE HAND \"a is true\"\n\
         \TALK TO THE HAND \"a' is unknown\"\n\
         \YOU HAVE NO RESPECT FOR LOGIC\n" `shouldBe`
-        Just
-          (If
-             (Var "a")
-             [PrintStr "a is true", PrintStr "a' is unknown"]
-             [])
+        Just (If (Var "a") [PrintStr "a is true", PrintStr "a' is unknown"] [])
     it "should parse if statements with else" $ do
       parseMaybe
         ifStatementParser
@@ -199,7 +195,7 @@ spec = do
         Just
           (Method
              "aMethod"
-             [MethodArg "arg1", MethodArg "arg2"]
+             [Var "arg1", Var "arg2"]
              [ (Assignment
                   "myvar"
                   (BinaryOp
@@ -273,5 +269,5 @@ spec = do
         Just
           [ Method "aMethod" [] []
           , Main []
-          , Method "aMethod2" [MethodArg "arg1", MethodArg "arg2"] []
+          , Method "aMethod2" [Var "arg1", Var "arg2"] []
           ]

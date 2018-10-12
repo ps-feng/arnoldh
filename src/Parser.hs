@@ -180,7 +180,7 @@ argumentParser :: Parser MethodArg
 argumentParser = do
   symbol "I NEED YOUR CLOTHES YOUR BOOTS AND YOUR MOTORCYCLE"
   argument <- identifierParser <* eolConsumer
-  return (MethodArg argument)
+  return (Var argument)
 
 methodStatementsParser :: Parser [Statement]
 methodStatementsParser = do
