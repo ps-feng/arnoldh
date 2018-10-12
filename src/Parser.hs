@@ -89,12 +89,21 @@ assignmentParser = do
 printStatementParser :: Parser Statement
 printStatementParser = do
   symbol "TALK TO THE HAND"
-  term <-
-    (try operandParser <|> (String <$> stringLiteralParser)) <* eolConsumer
-  return (Print term)
+  statement <- printExpressionStatementParser <|> printStringStatementParser
+  return statement
 
-intDeclarationStatementParser :: Parser Statement
-intDeclarationStatementParser = do
+printExpressionStatementParser :: Parser Statement
+printExpressionStatementParser = do
+  term <- try (operandParser <* eolConsumer)
+  return (PrintExpr term)
+
+printStringStatementParser :: Parser Statement
+printStringStatementParser = do
+  term <- try (stringLiteralParser <* eolConsumer)
+  return (PrintStr term)
+
+intVarDeclarationStatementParser :: Parser Statement
+intVarDeclarationStatementParser = do
   symbol "HEY CHRISTMAS TREE"
   var <- identifierParser <* eolConsumer
   symbol "YOU SET US UP"
@@ -153,7 +162,7 @@ callReadMethodStatementParser = do
 
 statementParser :: Parser Statement
 statementParser =
-  assignmentParser <|> printStatementParser <|> intDeclarationStatementParser <|>
+  assignmentParser <|> printStatementParser <|> intVarDeclarationStatementParser <|>
   ifStatementParser <|>
   whileStatementParser <|>
   callMethodStatementParser <|>

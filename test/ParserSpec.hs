@@ -87,45 +87,45 @@ spec = do
   describe "print statement parser" $ do
     it "should parse double-quoted strings" $ do
       parseMaybe printStatementParser "TALK TO THE HAND \"Hello\"\n" `shouldBe`
-        Just (Print (String "Hello"))
+        Just (PrintStr "Hello")
     it "should not parse single-quoted strings" $ do
       parseMaybe printStatementParser "TALK TO THE HAND \'Hello\'\n" `shouldBe`
         Nothing
     it "should parse printing of an integer" $ do
       parseMaybe printStatementParser "TALK TO THE HAND 4\n" `shouldBe`
-        Just (Print (Int 4))
+        Just (PrintExpr (Int 4))
     it "should parse a variable reference" $ do
       parseMaybe printStatementParser "TALK TO THE HAND a\n" `shouldBe`
-        Just (Print (Var "a"))
+        Just (PrintExpr (Var "a"))
   --
   describe "int declaration parser" $ do
     it "should parse signed integer" $ do
       parseMaybe
-        intDeclarationStatementParser
+        intVarDeclarationStatementParser
         "HEY CHRISTMAS TREE someVar\n\
         \YOU SET US UP -5\n" `shouldBe`
         Just (IntVar "someVar" (Int (-5)))
     it "should not parse a string" $ do
       parseMaybe
-        intDeclarationStatementParser
+        intVarDeclarationStatementParser
         "HEY CHRISTMAS TREE someVar\n\
         \YOU SET US UP \"hola\"\n" `shouldBe`
         Nothing
     it "should parse a variable" $ do
       parseMaybe
-        intDeclarationStatementParser
+        intVarDeclarationStatementParser
         "HEY CHRISTMAS TREE someVar\n\
         \YOU SET US UP a\n" `shouldBe`
         Just (IntVar "someVar" (Var "a"))
     it "should parse boolean" $ do
       parseMaybe
-        intDeclarationStatementParser
+        intVarDeclarationStatementParser
         "HEY CHRISTMAS TREE someVar\n\
         \YOU SET US UP @I LIED\n" `shouldBe`
         Just (IntVar "someVar" (Int 0))
     it "should not parse a number as a variable" $ do
       parseMaybe
-        intDeclarationStatementParser
+        intVarDeclarationStatementParser
         "HEY CHRISTMAS TREE 4\n\
         \YOU SET US UP\n" `shouldBe`
         Nothing
@@ -141,7 +141,7 @@ spec = do
         Just
           (If
              (Var "a")
-             [Print (String "a is true"), Print (String "a' is unknown")]
+             [PrintStr "a is true", PrintStr "a' is unknown"]
              [])
     it "should parse if statements with else" $ do
       parseMaybe
@@ -155,8 +155,8 @@ spec = do
         Just
           (If
              (Var "a")
-             [Print (String "a is true")]
-             [Print (String "a is not true"), Print (String "a' might be")])
+             [PrintStr "a is true"]
+             [PrintStr "a is not true", PrintStr "a' might be"])
     it "should parse empty if and else statements" $ do
       parseMaybe
         ifStatementParser
@@ -172,7 +172,7 @@ spec = do
         "STICK AROUND a\n\
         \TALK TO THE HAND \"a is true\"\n\
         \CHILL" `shouldBe`
-        Just (While (Var "a") [Print (String "a is true")])
+        Just (While (Var "a") [PrintStr "a is true"])
   --
   describe "method parser" $ do
     it "should parse empty method" $ do

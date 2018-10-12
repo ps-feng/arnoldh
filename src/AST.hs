@@ -18,8 +18,7 @@ data Op
 
 data Expr
   = Int Integer
-  | String String -- check also Data.Text
-  | Var String
+  | Var VarName
   | BinaryOp Op
              Expr
              Expr
@@ -28,7 +27,8 @@ data Expr
 data Statement
   = Assignment VarName
                Expr
-  | Print Expr
+  | PrintExpr Expr
+  | PrintStr String
   | IntVar VarName Expr
   | If Expr
        [Statement]
