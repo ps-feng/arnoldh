@@ -1,11 +1,15 @@
 module AST where
 
+import qualified Region as R
+
 type Program = [AbstractMethod]
 type MethodName = String
 type MethodArg = Expr
 type VarName = String
 
-data Op
+type Op = R.Located Op_
+
+data Op_
   = Add
   | Minus
   | Mult
