@@ -1,8 +1,10 @@
 module Parser where
 
 import AST
+import Control.Applicative (liftA2)
 import Data.Functor (void)
 import Data.Void
+import qualified Region as R
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
@@ -27,6 +29,7 @@ eolConsumer = space1
 lexeme :: Parser a -> Parser a
 lexeme = L.lexeme spaceConsumer
 
+-- TODO: check usages of 'symbol' as we should probably enforce at least 1 whitespace in some cases
 symbol :: String -> Parser String
 symbol = L.symbol spaceConsumer
 
@@ -42,18 +45,38 @@ signedIntegerParser = L.signed voidConsumer integerParser
 stringLiteralParser :: Parser String
 stringLiteralParser = lexeme (char '"' >> manyTill L.charLiteral (char '"'))
 
-booleanTermParser :: Parser Expr
-booleanTermParser =
-  (Int 0 <$ symbol "@I LIED") <|> (Int 1 <$ symbol "@NO PROBLEMO")
+booleanTermParser :: Parser Integer
+booleanTermParser = (0 <$ symbol "@I LIED") <|> (1 <$ symbol "@NO PROBLEMO")
 
 identifierParser :: Parser String
 identifierParser = (lexeme . try) p
   where
-    p = (:) <$> letterChar <*> many alphaNumChar
+    p = liftA2 (:) letterChar (many alphaNumChar)
 
-operandParser :: Parser Expr
+getParserPosition :: Parser R.Position
+getParserPosition = do
+  pos <- getPosition
+  return $
+    R.Position
+      { R._line = unPos . sourceLine $ pos
+      , R._column = unPos . sourceColumn $ pos
+      }
+
+-- TODO: investigate other approaches as the parsers defined in this file
+-- will generally consume the trailing spaces so the spaces end up counting towards
+-- the final position
+locatedParser :: Parser a -> Parser (R.Located a)
+locatedParser parser = do
+  start <- getParserPosition
+  val <- parser
+  end <- getParserPosition
+  return (R.at start end val)
+
+operandParser :: Parser LocatedExpr
 operandParser =
-  Int <$> signedIntegerParser <|> booleanTermParser <|> Var <$> identifierParser
+  (fmap Int) <$> locatedParser signedIntegerParser <|>
+  (fmap Int) <$> locatedParser booleanTermParser <|>
+  (fmap Var) <$> locatedParser identifierParser
 
 ops :: [(Op, String)]
 ops =
@@ -70,10 +93,16 @@ ops =
   , (GreaterThan, "LET OFF SOME STEAM BENNET")
   ]
 
-operatorTable :: [[Operator Parser Expr]]
-operatorTable = [map (\(op, sym) -> InfixL (BinaryOp op <$ symbol sym)) ops]
+operatorTable :: [[Operator Parser LocatedExpr]]
+operatorTable = [map (\(op, sym) -> InfixL (opParser op sym)) ops]
+  where
+    opParser ::
+         Op -> String -> Parser (LocatedExpr -> LocatedExpr -> LocatedExpr)
+    opParser op sym = do
+      locatedOp <- locatedParser $ symbol sym
+      return $ (fmap (.) (flip R.locate) locatedOp) . (BinaryOp op)
 
-expressionParser :: Parser Expr
+expressionParser :: Parser LocatedExpr
 expressionParser = do
   symbol "HERE IS MY INVITATION"
   makeExprParser (operandParser <* eolConsumer) operatorTable
@@ -81,7 +110,7 @@ expressionParser = do
 assignmentParser :: Parser Statement
 assignmentParser = do
   symbol "GET TO THE CHOPPER"
-  var <- identifierParser <* eolConsumer
+  var <- locatedParser identifierParser <* eolConsumer
   expr <- expressionParser
   symbol "ENOUGH TALK" >> eolConsumer
   return (Assignment var expr)
@@ -105,7 +134,7 @@ printStringStatementParser = do
 intVarDeclarationStatementParser :: Parser Statement
 intVarDeclarationStatementParser = do
   symbol "HEY CHRISTMAS TREE"
-  var <- identifierParser <* eolConsumer
+  var <- locatedParser identifierParser <* eolConsumer
   symbol "YOU SET US UP"
   number <- operandParser <* eolConsumer
   return (IntVar var number)
@@ -119,7 +148,7 @@ ifStatementParser = do
   symbol "YOU HAVE NO RESPECT FOR LOGIC" >> eolConsumer
   return (If condition ifStatements elseStatements)
 
-elseStatementParser :: Parser [Statement]
+elseStatementParser :: Parser [LocatedStatement]
 elseStatementParser = do
   symbol "BULLSHIT" >> eolConsumer
   elseStatements <- many statementParser
@@ -136,9 +165,11 @@ whileStatementParser = do
 callMethodStatementParser :: Parser Statement
 callMethodStatementParser = do
   var <-
-    optional (symbol "GET YOUR ASS TO MARS" >> identifierParser <* eolConsumer)
+    optional
+      (symbol "GET YOUR ASS TO MARS" >>
+       locatedParser identifierParser <* eolConsumer)
   symbol "DO IT NOW"
-  methodName <- identifierParser
+  methodName <- locatedParser identifierParser
   args <- many operandParser <* eolConsumer
   return (CallMethod var methodName args)
 
@@ -153,21 +184,29 @@ returnStatementParser = do
 callReadMethodStatementParser :: Parser Statement
 callReadMethodStatementParser = do
   symbol "GET YOUR ASS TO MARS"
-  var <- identifierParser <* eolConsumer
+  var <- locatedParser identifierParser <* eolConsumer
   symbol "DO IT NOW" >> eolConsumer
   symbol
     "I WANT TO ASK YOU A BUNCH OF QUESTIONS AND I WANT TO HAVE THEM ANSWERED IMMEDIATELY"
   eolConsumer
   return (CallRead var)
 
-statementParser :: Parser Statement
+statementParser :: Parser LocatedStatement
 statementParser =
-  assignmentParser <|> printStatementParser <|> intVarDeclarationStatementParser <|>
-  ifStatementParser <|>
-  whileStatementParser <|>
-  callMethodStatementParser <|>
-  returnStatementParser <|>
-  callReadMethodStatementParser
+  foldr1 (<|>) $
+  map
+    -- TODO: check if this is correct because the resulting location will wrap the
+    -- whole instruction until the beginning of the next one (including all newlines)
+    locatedParser
+    [ assignmentParser
+    , printStatementParser
+    , intVarDeclarationStatementParser
+    , ifStatementParser
+    , whileStatementParser
+    , callMethodStatementParser
+    , returnStatementParser
+    , callReadMethodStatementParser
+    ]
 
 mainMethodParser :: Parser AbstractMethod
 mainMethodParser = do
@@ -176,13 +215,13 @@ mainMethodParser = do
   symbol "YOU HAVE BEEN TERMINATED" >> eolConsumer
   return (Main statements)
 
-argumentParser :: Parser MethodArg
+argumentParser :: Parser LocatedMethodArg
 argumentParser = do
   symbol "I NEED YOUR CLOTHES YOUR BOOTS AND YOUR MOTORCYCLE"
-  argument <- identifierParser <* eolConsumer
-  return (Var argument)
+  argument <- locatedParser identifierParser
+  return (Var <$> argument)
 
-methodStatementsParser :: Parser [Statement]
+methodStatementsParser :: Parser [LocatedStatement]
 methodStatementsParser = do
   symbol "GIVE THESE PEOPLE AIR" >> eolConsumer
   statements <- many statementParser
@@ -191,8 +230,8 @@ methodStatementsParser = do
 methodParser :: Parser AbstractMethod
 methodParser = do
   symbol "LISTEN TO ME VERY CAREFULLY"
-  name <- identifierParser <* eolConsumer
-  arguments <- many argumentParser
+  name <- locatedParser identifierParser <* eolConsumer
+  arguments <- many $ argumentParser <* eolConsumer
   statements <- try methodStatementsParser <|> (return [])
   symbol "HASTA LA VISTA, BABY" >> eolConsumer
   return (Method name arguments statements)

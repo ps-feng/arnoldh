@@ -1,7 +1,7 @@
 module Validator where
 
 import AST
-import qualified Data.Set as Set
+import Data.Set (Set)
 
 -- After parsing, semantic validation of the AST needs to be performed.
 -- This involves checking that all used variables are declared,
@@ -14,7 +14,7 @@ import qualified Data.Set as Set
 --
 --
 data SymbolTable = SymbolTable
-  { variablesTable :: Set String
+  { variablesTable :: String
   , methodsTable :: String
   , currentMethod :: String
   }
@@ -24,6 +24,8 @@ emptyTable methodName = SymbolTable { variablesTable = "", methodsTable = "", cu
 validateAst :: Program -> Either String Program
 validateAst program = Right program
 --checkAllUsedVariablesAreDeclared
+-- check all called methods exist
+-- check no duplicated variables
 
 -- createSymbolTable :: AbstractMethod -> SymbolTable
 -- createSymbolTable (Main statements) =

@@ -3,13 +3,14 @@ module AST where
 import qualified Region as R
 
 type Program = [AbstractMethod]
-type MethodName = String
-type MethodArg = Expr
-type VarName = String
+type LocatedMethodName = R.Located String
+type LocatedMethodArg = R.Located Expr
+type LocatedVarName = R.Located String
+type LocatedExpr = R.Located Expr
+type LocatedStatement = R.Located Statement
+type LocatedMethod = R.Located AbstractMethod
 
-type Op = R.Located Op_
-
-data Op_
+data Op
   = Add
   | Minus
   | Mult
@@ -23,31 +24,34 @@ data Op_
 
 data Expr
   = Int Integer
-  | Var VarName
+  | Var String
   | BinaryOp Op
-             Expr
-             Expr
+             LocatedExpr
+             LocatedExpr
   deriving (Show, Eq)
 
 data Statement
-  = Assignment VarName
-               Expr
-  | PrintExpr Expr
+  = Assignment LocatedVarName
+               LocatedExpr
+  | PrintExpr LocatedExpr
   | PrintStr String
-  | IntVar VarName Expr
-  | If Expr
-       [Statement]
-       [Statement]
-  | While Expr
-          [Statement]
-  | CallMethod (Maybe VarName) MethodName [Expr]
-  | CallRead VarName -- not sure if VarName should be optional
-  | Return (Maybe Expr)
+  | IntVar LocatedVarName
+           LocatedExpr
+  | If LocatedExpr
+       [LocatedStatement]
+       [LocatedStatement]
+  | While LocatedExpr
+          [LocatedStatement]
+  | CallMethod (Maybe LocatedVarName)
+               LocatedMethodName
+               [LocatedExpr]
+  | CallRead LocatedVarName -- not sure if VarName should be optional
+  | Return (Maybe LocatedExpr)
   deriving (Show, Eq)
 
 data AbstractMethod
-  = Main [Statement]
-  | Method MethodName
-           [MethodArg]
-           [Statement]
+  = Main [LocatedStatement]
+  | Method LocatedMethodName
+           [LocatedMethodArg]
+           [LocatedStatement]
   deriving (Show, Eq)
