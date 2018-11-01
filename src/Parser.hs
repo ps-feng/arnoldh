@@ -1,4 +1,21 @@
-module Parser where
+module Parser
+  ( expressionParser
+  , assignmentParser
+  , printStatementParser
+  , intVarDeclarationStatementParser
+  , ifStatementParser
+  , whileStatementParser
+  , callMethodStatementParser
+  , returnStatementParser
+  , callReadMethodStatementParser
+  , statementParser
+  , mainMethodParser
+  , argumentParser
+  , methodStatementsParser
+  , methodParser
+  , abstractMethodParser
+  , programParser
+  ) where
 
 import AST
 import Control.Applicative (liftA2)
@@ -115,12 +132,6 @@ assignmentParser = do
   symbol "ENOUGH TALK" >> eolConsumer
   return (Assignment var expr)
 
-printStatementParser :: Parser Statement
-printStatementParser = do
-  symbol "TALK TO THE HAND"
-  statement <- printExpressionStatementParser <|> printStringStatementParser
-  return statement
-
 printExpressionStatementParser :: Parser Statement
 printExpressionStatementParser = do
   term <- try (operandParser <* eolConsumer)
@@ -130,6 +141,12 @@ printStringStatementParser :: Parser Statement
 printStringStatementParser = do
   term <- try (stringLiteralParser <* eolConsumer)
   return (PrintStr term)
+
+printStatementParser :: Parser Statement
+printStatementParser = do
+  symbol "TALK TO THE HAND"
+  statement <- printExpressionStatementParser <|> printStringStatementParser
+  return statement
 
 intVarDeclarationStatementParser :: Parser Statement
 intVarDeclarationStatementParser = do
