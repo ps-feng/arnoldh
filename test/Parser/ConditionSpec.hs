@@ -20,20 +20,20 @@ spec = do
           (If
              (R.At
                 (R.Region
-                   { R.start = R.Position {R._line = 1, R._column = 33}
-                   , R.end = R.Position {R._line = 1, R._column = 34}
+                   { R._start = R.Position {R._line = 1, R._column = 33}
+                   , R._end = R.Position {R._line = 1, R._column = 34}
                    })
                 (Var "a"))
              [ R.At
                  (R.Region
-                    { R.start = R.Position {R._line = 2, R._column = 1}
-                    , R.end = R.Position {R._line = 3, R._column = 1}
+                    { R._start = R.Position {R._line = 2, R._column = 1}
+                    , R._end = R.Position {R._line = 3, R._column = 1}
                     })
                  (PrintStr "a is true")
              , R.At
                  (R.Region
-                    { R.start = R.Position {R._line = 3, R._column = 1}
-                    , R.end = R.Position {R._line = 4, R._column = 1}
+                    { R._start = R.Position {R._line = 3, R._column = 1}
+                    , R._end = R.Position {R._line = 4, R._column = 1}
                     })
                  (PrintStr "a' is unknown")
              ]
@@ -51,27 +51,27 @@ spec = do
           (If
              (R.At
                 (R.Region
-                   { R.start = R.Position {R._line = 1, R._column = 33}
-                   , R.end = R.Position {R._line = 1, R._column = 34}
+                   { R._start = R.Position {R._line = 1, R._column = 33}
+                   , R._end = R.Position {R._line = 1, R._column = 34}
                    })
                 (Var "a"))
              [ R.At
                  (R.Region
-                    { R.start = R.Position {R._line = 2, R._column = 1}
-                    , R.end = R.Position {R._line = 3, R._column = 1}
+                    { R._start = R.Position {R._line = 2, R._column = 1}
+                    , R._end = R.Position {R._line = 3, R._column = 1}
                     })
                  (PrintStr "a is true")
              ]
              [ R.At
                  (R.Region
-                    { R.start = R.Position {R._line = 4, R._column = 1}
-                    , R.end = R.Position {R._line = 5, R._column = 1}
+                    { R._start = R.Position {R._line = 4, R._column = 1}
+                    , R._end = R.Position {R._line = 5, R._column = 1}
                     })
                  (PrintStr "a is not true")
              , R.At
                  (R.Region
-                    { R.start = R.Position {R._line = 5, R._column = 1}
-                    , R.end = R.Position {R._line = 6, R._column = 1}
+                    { R._start = R.Position {R._line = 5, R._column = 1}
+                    , R._end = R.Position {R._line = 6, R._column = 1}
                     })
                  (PrintStr "a' might be")
              ])
@@ -85,8 +85,8 @@ spec = do
           (If
              (R.At
                 (R.Region
-                   { R.start = R.Position {R._line = 1, R._column = 33}
-                   , R.end = R.Position {R._line = 1, R._column = 34}
+                   { R._start = R.Position {R._line = 1, R._column = 33}
+                   , R._end = R.Position {R._line = 1, R._column = 34}
                    })
                 (Var "a"))
              []
@@ -102,14 +102,14 @@ spec = do
           (While
              (R.At
                 (R.Region
-                   { R.start = R.Position {R._line = 1, R._column = 14}
-                   , R.end = R.Position {R._line = 1, R._column = 15}
+                   { R._start = R.Position {R._line = 1, R._column = 14}
+                   , R._end = R.Position {R._line = 1, R._column = 15}
                    })
                 (Var "a"))
              [ R.At
                  (R.Region
-                    { R.start = R.Position {R._line = 2, R._column = 1}
-                    , R.end = R.Position {R._line = 3, R._column = 1}
+                    { R._start = R.Position {R._line = 2, R._column = 1}
+                    , R._end = R.Position {R._line = 3, R._column = 1}
                     })
                  (PrintStr "a is true")
              ])

@@ -21,8 +21,8 @@ spec = do
           (PrintExpr
              (R.At
                 (R.Region
-                   { R.start = R.Position {R._line = 1, R._column = 18}
-                   , R.end = R.Position {R._line = 1, R._column = 19}
+                   { R._start = R.Position {R._line = 1, R._column = 18}
+                   , R._end = R.Position {R._line = 1, R._column = 19}
                    })
                 (Int 4)))
     it "should parse a variable reference" $ do
@@ -31,7 +31,7 @@ spec = do
           (PrintExpr
              (R.At
                 (R.Region
-                   { R.start = R.Position {R._line = 1, R._column = 18}
-                   , R.end = R.Position {R._line = 1, R._column = 19}
+                   { R._start = R.Position {R._line = 1, R._column = 18}
+                   , R._end = R.Position {R._line = 1, R._column = 19}
                    })
                 (Var "a")))

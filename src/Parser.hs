@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -fno-warn-unused-do-bind #-}
+
 module Parser
   ( expressionParser
   , assignmentParser
@@ -70,15 +72,6 @@ identifierParser = (lexeme . try) p
   where
     p = liftA2 (:) letterChar (many alphaNumChar)
 
-getParserPosition :: Parser R.Position
-getParserPosition = do
-  pos <- getPosition
-  return $
-    R.Position
-      { R._line = unPos . sourceLine $ pos
-      , R._column = unPos . sourceColumn $ pos
-      }
-
 -- TODO: investigate other approaches as the parsers defined in this file
 -- will generally consume the trailing spaces so the spaces end up counting towards
 -- the final position
@@ -88,6 +81,15 @@ locatedParser parser = do
   val <- parser
   end <- getParserPosition
   return (R.at start end val)
+  where
+    getParserPosition :: Parser R.Position
+    getParserPosition = do
+      pos <- getPosition
+      return $
+        R.Position
+          { R._line = unPos . sourceLine $ pos
+          , R._column = unPos . sourceColumn $ pos
+          }
 
 operandParser :: Parser LocatedExpr
 operandParser =

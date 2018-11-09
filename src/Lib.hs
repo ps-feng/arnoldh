@@ -5,6 +5,7 @@ module Lib
 import Parser
 import Text.Megaparsec
 
+input :: String
 input = "LISTEN TO ME VERY CAREFULLY aMethod\n\
 \HASTA LA VISTA, BABY\n\
 \\

@@ -17,21 +17,21 @@ spec = do
         Just
           (R.At
              (R.Region
-                { R.start = R.Position {R._line = 2, R._column = 1}
-                , R.end = R.Position {R._line = 2, R._column = 8}
+                { R._start = R.Position {R._line = 2, R._column = 1}
+                , R._end = R.Position {R._line = 2, R._column = 8}
                 })
              (BinaryOp
                 Add
                 (R.At
                    (R.Region
-                      { R.start = R.Position {R._line = 1, R._column = 23}
-                      , R.end = R.Position {R._line = 1, R._column = 24}
+                      { R._start = R.Position {R._line = 1, R._column = 23}
+                      , R._end = R.Position {R._line = 1, R._column = 24}
                       })
                    (Int 4))
                 (R.At
                    (R.Region
-                      { R.start = R.Position {R._line = 2, R._column = 8}
-                      , R.end = R.Position {R._line = 2, R._column = 9}
+                      { R._start = R.Position {R._line = 2, R._column = 8}
+                      , R._end = R.Position {R._line = 2, R._column = 9}
                       })
                    (Var "b"))))
     it "should parse minus operation" $ do
@@ -42,21 +42,21 @@ spec = do
         Just
           (R.At
              (R.Region
-                { R.start = R.Position {R._line = 2, R._column = 1}
-                , R.end = R.Position {R._line = 2, R._column = 10}
+                { R._start = R.Position {R._line = 2, R._column = 1}
+                , R._end = R.Position {R._line = 2, R._column = 10}
                 })
              (BinaryOp
                 Minus
                 (R.At
                    (R.Region
-                      { R.start = R.Position {R._line = 1, R._column = 23}
-                      , R.end = R.Position {R._line = 1, R._column = 24}
+                      { R._start = R.Position {R._line = 1, R._column = 23}
+                      , R._end = R.Position {R._line = 1, R._column = 24}
                       })
                    (Int 4))
                 (R.At
                    (R.Region
-                      { R.start = R.Position {R._line = 2, R._column = 10}
-                      , R.end = R.Position {R._line = 2, R._column = 11}
+                      { R._start = R.Position {R._line = 2, R._column = 10}
+                      , R._end = R.Position {R._line = 2, R._column = 11}
                       })
                    (Var "b"))))
     it "should parse divide operation" $ do
@@ -67,21 +67,21 @@ spec = do
         Just
           (R.At
              (R.Region
-                { R.start = R.Position {R._line = 2, R._column = 1}
-                , R.end = R.Position {R._line = 2, R._column = 17}
+                { R._start = R.Position {R._line = 2, R._column = 1}
+                , R._end = R.Position {R._line = 2, R._column = 17}
                 })
              (BinaryOp
                 Divide
                 (R.At
                    (R.Region
-                      { R.start = R.Position {R._line = 1, R._column = 23}
-                      , R.end = R.Position {R._line = 1, R._column = 24}
+                      { R._start = R.Position {R._line = 1, R._column = 23}
+                      , R._end = R.Position {R._line = 1, R._column = 24}
                       })
                    (Int 4))
                 (R.At
                    (R.Region
-                      { R.start = R.Position {R._line = 2, R._column = 17}
-                      , R.end = R.Position {R._line = 2, R._column = 18}
+                      { R._start = R.Position {R._line = 2, R._column = 17}
+                      , R._end = R.Position {R._line = 2, R._column = 18}
                       })
                    (Var "b"))))
     it "should parse multiplication operation" $ do
@@ -92,21 +92,21 @@ spec = do
         Just
           (R.At
              (R.Region
-                { R.start = R.Position {R._line = 2, R._column = 1}
-                , R.end = R.Position {R._line = 2, R._column = 14}
+                { R._start = R.Position {R._line = 2, R._column = 1}
+                , R._end = R.Position {R._line = 2, R._column = 14}
                 })
              (BinaryOp
                 Mult
                 (R.At
                    (R.Region
-                      { R.start = R.Position {R._line = 1, R._column = 23}
-                      , R.end = R.Position {R._line = 1, R._column = 24}
+                      { R._start = R.Position {R._line = 1, R._column = 23}
+                      , R._end = R.Position {R._line = 1, R._column = 24}
                       })
                    (Int 4))
                 (R.At
                    (R.Region
-                      { R.start = R.Position {R._line = 2, R._column = 14}
-                      , R.end = R.Position {R._line = 2, R._column = 15}
+                      { R._start = R.Position {R._line = 2, R._column = 14}
+                      , R._end = R.Position {R._line = 2, R._column = 15}
                       })
                    (Var "b"))))
     it "should parse modulo operation" $ do
@@ -117,21 +117,21 @@ spec = do
         Just
           (R.At
              (R.Region
-                { R.start = R.Position {R._line = 2, R._column = 1}
-                , R.end = R.Position {R._line = 2, R._column = 14}
+                { R._start = R.Position {R._line = 2, R._column = 1}
+                , R._end = R.Position {R._line = 2, R._column = 14}
                 })
              (BinaryOp
                 Modulo
                 (R.At
                    (R.Region
-                      { R.start = R.Position {R._line = 1, R._column = 23}
-                      , R.end = R.Position {R._line = 1, R._column = 24}
+                      { R._start = R.Position {R._line = 1, R._column = 23}
+                      , R._end = R.Position {R._line = 1, R._column = 24}
                       })
                    (Int 4))
                 (R.At
                    (R.Region
-                      { R.start = R.Position {R._line = 2, R._column = 14}
-                      , R.end = R.Position {R._line = 2, R._column = 15}
+                      { R._start = R.Position {R._line = 2, R._column = 14}
+                      , R._end = R.Position {R._line = 2, R._column = 15}
                       })
                    (Var "b"))))
     it "should parse 'or' operation" $ do
@@ -142,21 +142,21 @@ spec = do
         Just
           (R.At
              (R.Region
-                { R.start = R.Position {R._line = 2, R._column = 1}
-                , R.end = R.Position {R._line = 2, R._column = 25}
+                { R._start = R.Position {R._line = 2, R._column = 1}
+                , R._end = R.Position {R._line = 2, R._column = 25}
                 })
              (BinaryOp
                 Or
                 (R.At
                    (R.Region
-                      { R.start = R.Position {R._line = 1, R._column = 23}
-                      , R.end = R.Position {R._line = 1, R._column = 24}
+                      { R._start = R.Position {R._line = 1, R._column = 23}
+                      , R._end = R.Position {R._line = 1, R._column = 24}
                       })
                    (Int 4))
                 (R.At
                    (R.Region
-                      { R.start = R.Position {R._line = 2, R._column = 25}
-                      , R.end = R.Position {R._line = 2, R._column = 26}
+                      { R._start = R.Position {R._line = 2, R._column = 25}
+                      , R._end = R.Position {R._line = 2, R._column = 26}
                       })
                    (Var "b"))))
     it "should parse 'and' operation" $ do
@@ -167,21 +167,21 @@ spec = do
         Just
           (R.At
              (R.Region
-                { R.start = R.Position {R._line = 2, R._column = 1}
-                , R.end = R.Position {R._line = 2, R._column = 13}
+                { R._start = R.Position {R._line = 2, R._column = 1}
+                , R._end = R.Position {R._line = 2, R._column = 13}
                 })
              (BinaryOp
                 And
                 (R.At
                    (R.Region
-                      { R.start = R.Position {R._line = 1, R._column = 23}
-                      , R.end = R.Position {R._line = 1, R._column = 24}
+                      { R._start = R.Position {R._line = 1, R._column = 23}
+                      , R._end = R.Position {R._line = 1, R._column = 24}
                       })
                    (Int 4))
                 (R.At
                    (R.Region
-                      { R.start = R.Position {R._line = 2, R._column = 13}
-                      , R.end = R.Position {R._line = 2, R._column = 14}
+                      { R._start = R.Position {R._line = 2, R._column = 13}
+                      , R._end = R.Position {R._line = 2, R._column = 14}
                       })
                    (Var "b"))))
     it "should parse 'equal to' operation" $ do
@@ -192,21 +192,21 @@ spec = do
         Just
           (R.At
              (R.Region
-                { R.start = R.Position {R._line = 2, R._column = 1}
-                , R.end = R.Position {R._line = 2, R._column = 28}
+                { R._start = R.Position {R._line = 2, R._column = 1}
+                , R._end = R.Position {R._line = 2, R._column = 28}
                 })
              (BinaryOp
                 EqualTo
                 (R.At
                    (R.Region
-                      { R.start = R.Position {R._line = 1, R._column = 23}
-                      , R.end = R.Position {R._line = 1, R._column = 24}
+                      { R._start = R.Position {R._line = 1, R._column = 23}
+                      , R._end = R.Position {R._line = 1, R._column = 24}
                       })
                    (Int 4))
                 (R.At
                    (R.Region
-                      { R.start = R.Position {R._line = 2, R._column = 28}
-                      , R.end = R.Position {R._line = 2, R._column = 29}
+                      { R._start = R.Position {R._line = 2, R._column = 28}
+                      , R._end = R.Position {R._line = 2, R._column = 29}
                       })
                    (Var "b"))))
     it "should parse 'equal to' operation" $ do
@@ -217,21 +217,21 @@ spec = do
         Just
           (R.At
              (R.Region
-                { R.start = R.Position {R._line = 2, R._column = 1}
-                , R.end = R.Position {R._line = 2, R._column = 27}
+                { R._start = R.Position {R._line = 2, R._column = 1}
+                , R._end = R.Position {R._line = 2, R._column = 27}
                 })
              (BinaryOp
                 GreaterThan
                 (R.At
                    (R.Region
-                      { R.start = R.Position {R._line = 1, R._column = 23}
-                      , R.end = R.Position {R._line = 1, R._column = 24}
+                      { R._start = R.Position {R._line = 1, R._column = 23}
+                      , R._end = R.Position {R._line = 1, R._column = 24}
                       })
                    (Int 4))
                 (R.At
                    (R.Region
-                      { R.start = R.Position {R._line = 2, R._column = 27}
-                      , R.end = R.Position {R._line = 2, R._column = 28}
+                      { R._start = R.Position {R._line = 2, R._column = 27}
+                      , R._end = R.Position {R._line = 2, R._column = 28}
                       })
                    (Var "b"))))
     it "should parse chained binary operations" $
@@ -247,71 +247,71 @@ spec = do
         Just
           (R.At
              (R.Region
-                { R.start = R.Position {R._line = 5, R._column = 1}
-                , R.end = R.Position {R._line = 5, R._column = 25}
+                { R._start = R.Position {R._line = 5, R._column = 1}
+                , R._end = R.Position {R._line = 5, R._column = 25}
                 })
              (BinaryOp
                 Or
                 (R.At
                    (R.Region
-                      { R.start = R.Position {R._line = 4, R._column = 1}
-                      , R.end = R.Position {R._line = 4, R._column = 13}
+                      { R._start = R.Position {R._line = 4, R._column = 1}
+                      , R._end = R.Position {R._line = 4, R._column = 13}
                       })
                    (BinaryOp
                       And
                       (R.At
                          (R.Region
-                            { R.start = R.Position {R._line = 3, R._column = 1}
-                            , R.end = R.Position {R._line = 3, R._column = 27}
+                            { R._start = R.Position {R._line = 3, R._column = 1}
+                            , R._end = R.Position {R._line = 3, R._column = 27}
                             })
                          (BinaryOp
                             GreaterThan
                             (R.At
                                (R.Region
-                                  { R.start =
+                                  { R._start =
                                       R.Position {R._line = 2, R._column = 1}
-                                  , R.end =
+                                  , R._end =
                                       R.Position {R._line = 2, R._column = 8}
                                   })
                                (BinaryOp
                                   Add
                                   (R.At
                                      (R.Region
-                                        { R.start =
+                                        { R._start =
                                             R.Position
                                               {R._line = 1, R._column = 23}
-                                        , R.end =
+                                        , R._end =
                                             R.Position
                                               {R._line = 1, R._column = 24}
                                         })
                                      (Int 4))
                                   (R.At
                                      (R.Region
-                                        { R.start =
+                                        { R._start =
                                             R.Position
                                               {R._line = 2, R._column = 8}
-                                        , R.end =
+                                        , R._end =
                                             R.Position
                                               {R._line = 2, R._column = 9}
                                         })
                                      (Var "b"))))
                             (R.At
                                (R.Region
-                                  { R.start =
+                                  { R._start =
                                       R.Position {R._line = 3, R._column = 27}
-                                  , R.end =
+                                  , R._end =
                                       R.Position {R._line = 3, R._column = 28}
                                   })
                                (Int 3))))
                       (R.At
                          (R.Region
-                            { R.start = R.Position {R._line = 4, R._column = 13}
-                            , R.end = R.Position {R._line = 4, R._column = 25}
+                            { R._start = R.Position {R._line = 4, R._column = 13}
+                            , R._end = R.Position {R._line = 4, R._column = 25}
                             })
                          (Int 1))))
                 (R.At
                    (R.Region
-                      { R.start = R.Position {R._line = 5, R._column = 25}
-                      , R.end = R.Position {R._line = 5, R._column = 32}
+                      { R._start = R.Position {R._line = 5, R._column = 25}
+                      , R._end = R.Position {R._line = 5, R._column = 32}
                       })
                    (Int 0))))

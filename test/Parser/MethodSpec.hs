@@ -18,8 +18,8 @@ spec = do
           (Method
              (R.At
                 (R.Region
-                   { R.start = R.Position {R._line = 1, R._column = 29}
-                   , R.end = R.Position {R._line = 1, R._column = 36}
+                   { R._start = R.Position {R._line = 1, R._column = 29}
+                   , R._end = R.Position {R._line = 1, R._column = 36}
                    })
                 "aMethod")
              []
@@ -43,63 +43,63 @@ spec = do
           (Method
              (R.At
                 (R.Region
-                   { R.start = R.Position {R._line = 1, R._column = 29}
-                   , R.end = R.Position {R._line = 1, R._column = 36}
+                   { R._start = R.Position {R._line = 1, R._column = 29}
+                   , R._end = R.Position {R._line = 1, R._column = 36}
                    })
                 "aMethod")
              [ R.At
                  (R.Region
-                    { R.start = R.Position {R._line = 2, R._column = 52}
-                    , R.end = R.Position {R._line = 2, R._column = 56}
+                    { R._start = R.Position {R._line = 2, R._column = 52}
+                    , R._end = R.Position {R._line = 2, R._column = 56}
                     })
                  (Var "arg1")
              , R.At
                  (R.Region
-                    { R.start = R.Position {R._line = 3, R._column = 52}
-                    , R.end = R.Position {R._line = 3, R._column = 56}
+                    { R._start = R.Position {R._line = 3, R._column = 52}
+                    , R._end = R.Position {R._line = 3, R._column = 56}
                     })
                  (Var "arg2")
              ]
              [ R.At
                  (R.Region
-                    { R.start = R.Position {R._line = 5, R._column = 1}
-                    , R.end = R.Position {R._line = 12, R._column = 1}
+                    { R._start = R.Position {R._line = 5, R._column = 1}
+                    , R._end = R.Position {R._line = 12, R._column = 1}
                     })
                  (Assignment
                     (R.At
                        (R.Region
-                          { R.start = R.Position {R._line = 5, R._column = 20}
-                          , R.end = R.Position {R._line = 5, R._column = 25}
+                          { R._start = R.Position {R._line = 5, R._column = 20}
+                          , R._end = R.Position {R._line = 5, R._column = 25}
                           })
                        "myvar")
                     (R.At
                        (R.Region
-                          { R.start = R.Position {R._line = 10, R._column = 1}
-                          , R.end = R.Position {R._line = 10, R._column = 17}
+                          { R._start = R.Position {R._line = 10, R._column = 1}
+                          , R._end = R.Position {R._line = 10, R._column = 17}
                           })
                        (BinaryOp
                           Divide
                           (R.At
                              (R.Region
-                                { R.start = R.Position {R._line = 9, R._column = 1}
-                                , R.end = R.Position {R._line = 9, R._column = 10}
+                                { R._start = R.Position {R._line = 9, R._column = 1}
+                                , R._end = R.Position {R._line = 9, R._column = 10}
                                 })
                              (BinaryOp
                                 Minus
                                 (R.At
                                    (R.Region
-                                      { R.start =
+                                      { R._start =
                                           R.Position {R._line = 8, R._column = 1}
-                                      , R.end = R.Position {R._line = 8, R._column = 14}
+                                      , R._end = R.Position {R._line = 8, R._column = 14}
                                       })
                                    (BinaryOp
                                       Mult
                                       (R.At
                                          (R.Region
-                                            { R.start =
+                                            { R._start =
                                                 R.Position
                                                   {R._line = 7, R._column = 1}
-                                            , R.end =
+                                            , R._end =
                                                 R.Position
                                                   {R._line = 7, R._column = 8}
                                             })
@@ -107,12 +107,12 @@ spec = do
                                             Add
                                             (R.At
                                                (R.Region
-                                                  { R.start =
+                                                  { R._start =
                                                       R.Position
                                                         { R._line = 6
                                                         , R._column = 23
                                                         }
-                                                  , R.end =
+                                                  , R._end =
                                                       R.Position
                                                         { R._line = 6
                                                         , R._column = 24
@@ -121,35 +121,35 @@ spec = do
                                                (Int 4))
                                             (R.At
                                                (R.Region
-                                                  { R.start =
+                                                  { R._start =
                                                       R.Position
                                                         {R._line = 7, R._column = 8}
-                                                  , R.end =
+                                                  , R._end =
                                                       R.Position
                                                         {R._line = 7, R._column = 9}
                                                   })
                                                (Var "b"))))
                                       (R.At
                                          (R.Region
-                                            { R.start =
+                                            { R._start =
                                                 R.Position
                                                   {R._line = 8, R._column = 14}
-                                            , R.end =
+                                            , R._end =
                                                 R.Position
                                                   {R._line = 8, R._column = 15}
                                             })
                                          (Int 5))))
                                 (R.At
                                    (R.Region
-                                      { R.start =
+                                      { R._start =
                                           R.Position {R._line = 9, R._column = 10}
-                                      , R.end = R.Position {R._line = 9, R._column = 11}
+                                      , R._end = R.Position {R._line = 9, R._column = 11}
                                       })
                                    (Int 1))))
                           (R.At
                              (R.Region
-                                { R.start = R.Position {R._line = 10, R._column = 17}
-                                , R.end = R.Position {R._line = 10, R._column = 21}
+                                { R._start = R.Position {R._line = 10, R._column = 17}
+                                , R._end = R.Position {R._line = 10, R._column = 21}
                                 })
                              (Var "send")))))
              ])
@@ -164,15 +164,15 @@ spec = do
           (Method
              (R.At
                 (R.Region
-                   { R.start = R.Position {R._line = 1, R._column = 29}
-                   , R.end = R.Position {R._line = 1, R._column = 36}
+                   { R._start = R.Position {R._line = 1, R._column = 29}
+                   , R._end = R.Position {R._line = 1, R._column = 36}
                    })
                 "aMethod")
              []
              [ R.At
                  (R.Region
-                    { R.start = R.Position {R._line = 3, R._column = 1}
-                    , R.end = R.Position {R._line = 4, R._column = 3}
+                    { R._start = R.Position {R._line = 3, R._column = 1}
+                    , R._end = R.Position {R._line = 4, R._column = 3}
                     })
                  (Return Nothing)
              ])
@@ -187,22 +187,22 @@ spec = do
           (Method
              (R.At
                 (R.Region
-                   { R.start = R.Position {R._line = 1, R._column = 29}
-                   , R.end = R.Position {R._line = 1, R._column = 36}
+                   { R._start = R.Position {R._line = 1, R._column = 29}
+                   , R._end = R.Position {R._line = 1, R._column = 36}
                    })
                 "aMethod")
              []
              [ R.At
                  (R.Region
-                    { R.start = R.Position {R._line = 3, R._column = 1}
-                    , R.end = R.Position {R._line = 4, R._column = 1}
+                    { R._start = R.Position {R._line = 3, R._column = 1}
+                    , R._end = R.Position {R._line = 4, R._column = 1}
                     })
                  (Return
                     (Just
                        (R.At
                           (R.Region
-                             { R.start = R.Position {R._line = 3, R._column = 14}
-                             , R.end = R.Position {R._line = 3, R._column = 15}
+                             { R._start = R.Position {R._line = 3, R._column = 14}
+                             , R._end = R.Position {R._line = 3, R._column = 15}
                              })
                           (Int 4))))
              ])

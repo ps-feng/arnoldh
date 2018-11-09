@@ -19,7 +19,7 @@ spec = do
           (CallRead
              (R.At
                 (R.Region
-                   { R.start = R.Position {R._line = 1, R._column = 22}
-                   , R.end = R.Position {R._line = 1, R._column = 25}
+                   { R._start = R.Position {R._line = 1, R._column = 22}
+                   , R._end = R.Position {R._line = 1, R._column = 25}
                    })
                 "var"))

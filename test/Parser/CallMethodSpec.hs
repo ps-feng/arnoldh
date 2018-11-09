@@ -16,8 +16,8 @@ spec = do
              Nothing
              (R.At
                 (R.Region
-                   { R.start = R.Position {R._line = 1, R._column = 11}
-                   , R.end = R.Position {R._line = 1, R._column = 18}
+                   { R._start = R.Position {R._line = 1, R._column = 11}
+                   , R._end = R.Position {R._line = 1, R._column = 18}
                    })
                 "aMethod")
              [])
@@ -28,20 +28,20 @@ spec = do
              Nothing
              (R.At
                 (R.Region
-                   { R.start = R.Position {R._line = 1, R._column = 11}
-                   , R.end = R.Position {R._line = 1, R._column = 19}
+                   { R._start = R.Position {R._line = 1, R._column = 11}
+                   , R._end = R.Position {R._line = 1, R._column = 19}
                    })
                 "aMethod")
              [ R.At
                  (R.Region
-                    { R.start = R.Position {R._line = 1, R._column = 19}
-                    , R.end = R.Position {R._line = 1, R._column = 21}
+                    { R._start = R.Position {R._line = 1, R._column = 19}
+                    , R._end = R.Position {R._line = 1, R._column = 21}
                     })
                  (Int 3)
              , R.At
                  (R.Region
-                    { R.start = R.Position {R._line = 1, R._column = 21}
-                    , R.end = R.Position {R._line = 1, R._column = 22}
+                    { R._start = R.Position {R._line = 1, R._column = 21}
+                    , R._end = R.Position {R._line = 1, R._column = 22}
                     })
                  (Int 4)
              ])
@@ -55,14 +55,14 @@ spec = do
              (Just
                 (R.At
                    (R.Region
-                      { R.start = R.Position {R._line = 1, R._column = 22}
-                      , R.end = R.Position {R._line = 1, R._column = 29}
+                      { R._start = R.Position {R._line = 1, R._column = 22}
+                      , R._end = R.Position {R._line = 1, R._column = 29}
                       })
                    "someVar"))
              (R.At
                 (R.Region
-                   { R.start = R.Position {R._line = 2, R._column = 11}
-                   , R.end = R.Position {R._line = 2, R._column = 18}
+                   { R._start = R.Position {R._line = 2, R._column = 11}
+                   , R._end = R.Position {R._line = 2, R._column = 18}
                    })
                 "aMethod")
              [])
@@ -76,32 +76,32 @@ spec = do
              (Just
                 (R.At
                    (R.Region
-                      { R.start = R.Position {R._line = 1, R._column = 22}
-                      , R.end = R.Position {R._line = 1, R._column = 29}
+                      { R._start = R.Position {R._line = 1, R._column = 22}
+                      , R._end = R.Position {R._line = 1, R._column = 29}
                       })
                    "someVar"))
              (R.At
                 (R.Region
-                   { R.start = R.Position {R._line = 2, R._column = 11}
-                   , R.end = R.Position {R._line = 2, R._column = 19}
+                   { R._start = R.Position {R._line = 2, R._column = 11}
+                   , R._end = R.Position {R._line = 2, R._column = 19}
                    })
                 "aMethod")
              [ R.At
                  (R.Region
-                    { R.start = R.Position {R._line = 2, R._column = 19}
-                    , R.end = R.Position {R._line = 2, R._column = 22}
+                    { R._start = R.Position {R._line = 2, R._column = 19}
+                    , R._end = R.Position {R._line = 2, R._column = 22}
                     })
                  (Int 10)
              , R.At
                  (R.Region
-                    { R.start = R.Position {R._line = 2, R._column = 22}
-                    , R.end = R.Position {R._line = 2, R._column = 30}
+                    { R._start = R.Position {R._line = 2, R._column = 22}
+                    , R._end = R.Position {R._line = 2, R._column = 30}
                     })
                  (Int 0)
              , R.At
                  (R.Region
-                    { R.start = R.Position {R._line = 2, R._column = 30}
-                    , R.end = R.Position {R._line = 2, R._column = 32}
+                    { R._start = R.Position {R._line = 2, R._column = 30}
+                    , R._end = R.Position {R._line = 2, R._column = 32}
                     })
                  (Var "b")
              ])

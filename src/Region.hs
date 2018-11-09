@@ -1,8 +1,8 @@
 module Region where
 
 data Region = Region
-  { start :: Position
-  , end :: Position
+  { _start :: Position
+  , _end :: Position
   } deriving (Eq, Show)
 
 data Position = Position
@@ -26,3 +26,6 @@ unlocate (At _ a) = a
 
 locate :: a -> Located b -> Located a
 locate a (At region _) = At region a
+
+getLocation :: Located a -> Region
+getLocation (At region _) = region

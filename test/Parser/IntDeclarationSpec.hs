@@ -18,14 +18,14 @@ spec = do
           (IntVar
              (R.At
                 (R.Region
-                   { R.start = R.Position {R._line = 1, R._column = 20}
-                   , R.end = R.Position {R._line = 1, R._column = 27}
+                   { R._start = R.Position {R._line = 1, R._column = 20}
+                   , R._end = R.Position {R._line = 1, R._column = 27}
                    })
                 "someVar")
              (R.At
                 (R.Region
-                   { R.start = R.Position {R._line = 2, R._column = 15}
-                   , R.end = R.Position {R._line = 2, R._column = 17}
+                   { R._start = R.Position {R._line = 2, R._column = 15}
+                   , R._end = R.Position {R._line = 2, R._column = 17}
                    })
                 (Int (-5))))
     it "should not parse a string" $ do
@@ -43,14 +43,14 @@ spec = do
           (IntVar
              (R.At
                 (R.Region
-                   { R.start = R.Position {R._line = 1, R._column = 20}
-                   , R.end = R.Position {R._line = 1, R._column = 27}
+                   { R._start = R.Position {R._line = 1, R._column = 20}
+                   , R._end = R.Position {R._line = 1, R._column = 27}
                    })
                 "someVar")
              (R.At
                 (R.Region
-                   { R.start = R.Position {R._line = 2, R._column = 15}
-                   , R.end = R.Position {R._line = 2, R._column = 16}
+                   { R._start = R.Position {R._line = 2, R._column = 15}
+                   , R._end = R.Position {R._line = 2, R._column = 16}
                    })
                 (Var "a")))
     it "should parse boolean" $ do
@@ -62,14 +62,14 @@ spec = do
           (IntVar
              (R.At
                 (R.Region
-                   { R.start = R.Position {R._line = 1, R._column = 20}
-                   , R.end = R.Position {R._line = 1, R._column = 27}
+                   { R._start = R.Position {R._line = 1, R._column = 20}
+                   , R._end = R.Position {R._line = 1, R._column = 27}
                    })
                 "someVar")
              (R.At
                 (R.Region
-                   { R.start = R.Position {R._line = 2, R._column = 15}
-                   , R.end = R.Position {R._line = 2, R._column = 22}
+                   { R._start = R.Position {R._line = 2, R._column = 15}
+                   , R._end = R.Position {R._line = 2, R._column = 22}
                    })
                 (Int 0)))
     it "should not parse a number as a variable" $ do
