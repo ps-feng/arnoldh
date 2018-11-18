@@ -4,7 +4,7 @@ import qualified Region as R
 
 type Program = [AbstractMethod]
 type LocatedMethodName = R.Located String
-type LocatedMethodArg = R.Located Expr
+type LocatedMethodArg = R.Located MethodArg
 type LocatedVarName = R.Located String
 type LocatedExpr = R.Located Expr
 type LocatedStatement = R.Located Statement
@@ -49,9 +49,19 @@ data Statement
   | Return (Maybe LocatedExpr)
   deriving (Show, Eq)
 
+data MethodArg =
+  MethodArg String
+  deriving (Show, Eq, Ord)
+
+data ReturnType
+  = TVoid
+  | TInt
+  deriving (Show, Eq)
+
 data AbstractMethod
   = Main [LocatedStatement]
   | Method LocatedMethodName
+           ReturnType
            [LocatedMethodArg]
            [LocatedStatement]
   deriving (Show, Eq)

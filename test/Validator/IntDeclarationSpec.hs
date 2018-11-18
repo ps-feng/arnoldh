@@ -1,53 +1,29 @@
 module Validator.IntDeclarationSpec where
 
 import AST
+import Control.Monad.Trans.State
 import qualified Data.Set as Set
-import qualified Region as R
 import Test.Hspec
+import TestHelper (errorRegion, located, locatedE)
 import Validator
-
-dummyRegion :: R.Region
-dummyRegion =
-  R.Region
-    { R._start = R.Position {R._line = 1, R._column = 1}
-    , R._end = R.Position {R._line = 1, R._column = 2}
-    }
 
 spec :: Spec
 spec = do
   describe "integer declaration validation" $ do
-    it "should succeed if variable is not used" $ do
-      let method =
-            Main
-              [ (R.At
-                   dummyRegion
-                   (IntVar (R.At dummyRegion "foo") (R.At dummyRegion (Int 5))))
-              ]
+    it "should succeed if variable was not declared" $ do
+      let statement = located (IntVar (located "foo") (located (Int 5)))
+      let initialState = ([], emptyTable MainMethodScope)
       let expectedResult =
-            Right
-              (SymbolTable
-                 { _parentTable = Nothing
-                 , _variableSet = Set.singleton "foo"
-                 , _methodSet = Set.empty
-                 , _currentMethod = "main"
-                 })
-      validateMethod method (emptyTable "main") `shouldBe` expectedResult
+            ([], (snd initialState) {_variableSet = Set.singleton "foo"})
+      runState (validateStatement statement) initialState `shouldBe`
+        ((), expectedResult)
     it "should fail if variable already exists" $ do
-      let errorRegion =
-            R.Region
-              { R._start = R.Position {R._line = 5, R._column = 38}
-              , R._end = R.Position {R._line = 5, R._column = 40}
-              }
-      let method =
-            Main
-              [ (R.At
-                   dummyRegion
-                   (IntVar (R.At errorRegion "foo") (R.At dummyRegion (Int 5))))
-              ]
-      let symbolTable = (emptyTable "main") {_variableSet = Set.singleton "foo"}
+      let statement = located (IntVar (locatedE "foo") (located (Int 5)))
+      let initialState =
+            ( []
+            , (emptyTable MainMethodScope) {_variableSet = Set.singleton "foo"})
       let expectedResult =
-            Left
-              [ Error
-                  {_location = errorRegion, _errorMsg = VarAlreadyDeclaredError}
-              ]
-      validateMethod method symbolTable `shouldBe` expectedResult
+            ( [createErrorAt errorRegion VarAlreadyDeclaredError]
+            , snd initialState)
+      runState (validateStatement statement) initialState `shouldBe`
+        ((), expectedResult)

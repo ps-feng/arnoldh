@@ -238,22 +238,27 @@ argumentParser :: Parser LocatedMethodArg
 argumentParser = do
   symbol "I NEED YOUR CLOTHES YOUR BOOTS AND YOUR MOTORCYCLE"
   argument <- locatedParser identifierParser
-  return (Var <$> argument)
+  return (MethodArg <$> argument)
 
 methodStatementsParser :: Parser [LocatedStatement]
 methodStatementsParser = do
-  symbol "GIVE THESE PEOPLE AIR" >> eolConsumer
   statements <- many statementParser
   return statements
+
+nonVoidMethodTypeParser :: Parser ReturnType
+nonVoidMethodTypeParser = do
+  symbol "GIVE THESE PEOPLE AIR" >> eolConsumer
+  return TInt
 
 methodParser :: Parser AbstractMethod
 methodParser = do
   symbol "LISTEN TO ME VERY CAREFULLY"
   name <- locatedParser identifierParser <* eolConsumer
   arguments <- many $ argumentParser <* eolConsumer
-  statements <- try methodStatementsParser <|> (return [])
+  returnType <- try nonVoidMethodTypeParser <|> return TVoid
+  statements <- try methodStatementsParser <|> return []
   symbol "HASTA LA VISTA, BABY" >> eolConsumer
-  return (Method name arguments statements)
+  return (Method name returnType arguments statements)
 
 abstractMethodParser :: Parser AbstractMethod
 abstractMethodParser = mainMethodParser <|> methodParser

@@ -22,6 +22,7 @@ spec = do
                    , R._end = R.Position {R._line = 1, R._column = 36}
                    })
                 "aMethod")
+             TVoid
              []
              [])
     it "should parse non-void method with 2 arguments" $ do
@@ -38,6 +39,7 @@ spec = do
         \GET DOWN 1\n\
         \HE HAD TO SPLIT send\n\
         \ENOUGH TALK\n\
+        \I'LL BE BACK myvar\n\
         \HASTA LA VISTA, BABY\n" `shouldBe`
         Just
           (Method
@@ -47,18 +49,19 @@ spec = do
                    , R._end = R.Position {R._line = 1, R._column = 36}
                    })
                 "aMethod")
+             TInt
              [ R.At
                  (R.Region
                     { R._start = R.Position {R._line = 2, R._column = 52}
                     , R._end = R.Position {R._line = 2, R._column = 56}
                     })
-                 (Var "arg1")
+                 (MethodArg "arg1")
              , R.At
                  (R.Region
                     { R._start = R.Position {R._line = 3, R._column = 52}
                     , R._end = R.Position {R._line = 3, R._column = 56}
                     })
-                 (Var "arg2")
+                 (MethodArg "arg2")
              ]
              [ R.At
                  (R.Region
@@ -81,16 +84,21 @@ spec = do
                           Divide
                           (R.At
                              (R.Region
-                                { R._start = R.Position {R._line = 9, R._column = 1}
-                                , R._end = R.Position {R._line = 9, R._column = 10}
+                                { R._start =
+                                    R.Position {R._line = 9, R._column = 1}
+                                , R._end =
+                                    R.Position {R._line = 9, R._column = 10}
                                 })
                              (BinaryOp
                                 Minus
                                 (R.At
                                    (R.Region
                                       { R._start =
-                                          R.Position {R._line = 8, R._column = 1}
-                                      , R._end = R.Position {R._line = 8, R._column = 14}
+                                          R.Position
+                                            {R._line = 8, R._column = 1}
+                                      , R._end =
+                                          R.Position
+                                            {R._line = 8, R._column = 14}
                                       })
                                    (BinaryOp
                                       Mult
@@ -123,10 +131,14 @@ spec = do
                                                (R.Region
                                                   { R._start =
                                                       R.Position
-                                                        {R._line = 7, R._column = 8}
+                                                        { R._line = 7
+                                                        , R._column = 8
+                                                        }
                                                   , R._end =
                                                       R.Position
-                                                        {R._line = 7, R._column = 9}
+                                                        { R._line = 7
+                                                        , R._column = 9
+                                                        }
                                                   })
                                                (Var "b"))))
                                       (R.At
@@ -142,22 +154,41 @@ spec = do
                                 (R.At
                                    (R.Region
                                       { R._start =
-                                          R.Position {R._line = 9, R._column = 10}
-                                      , R._end = R.Position {R._line = 9, R._column = 11}
+                                          R.Position
+                                            {R._line = 9, R._column = 10}
+                                      , R._end =
+                                          R.Position
+                                            {R._line = 9, R._column = 11}
                                       })
                                    (Int 1))))
                           (R.At
                              (R.Region
-                                { R._start = R.Position {R._line = 10, R._column = 17}
-                                , R._end = R.Position {R._line = 10, R._column = 21}
+                                { R._start =
+                                    R.Position {R._line = 10, R._column = 17}
+                                , R._end =
+                                    R.Position {R._line = 10, R._column = 21}
                                 })
                              (Var "send")))))
+             , R.At
+                 (R.Region
+                    { R._start = R.Position {R._line = 12, R._column = 1}
+                    , R._end = R.Position {R._line = 13, R._column = 1}
+                    })
+                 (Return
+                    (Just
+                       (R.At
+                          (R.Region
+                             { R._start =
+                                 R.Position {R._line = 12, R._column = 14}
+                             , R._end =
+                                 R.Position {R._line = 12, R._column = 19}
+                             })
+                          (Var "myvar"))))
              ])
-    it "should parse method with empty return statement" $ do
+    it "should parse void method with empty return statement" $ do
       parseMaybe
         methodParser
         "LISTEN TO ME VERY CAREFULLY aMethod\n\
-        \GIVE THESE PEOPLE AIR\n\
         \I'LL BE BACK  \n  \
         \HASTA LA VISTA, BABY\n" `shouldBe`
         Just
@@ -168,11 +199,12 @@ spec = do
                    , R._end = R.Position {R._line = 1, R._column = 36}
                    })
                 "aMethod")
+             TVoid
              []
              [ R.At
                  (R.Region
-                    { R._start = R.Position {R._line = 3, R._column = 1}
-                    , R._end = R.Position {R._line = 4, R._column = 3}
+                    { R._start = R.Position {R._line = 2, R._column = 1}
+                    , R._end = R.Position {R._line = 3, R._column = 3}
                     })
                  (Return Nothing)
              ])
@@ -191,6 +223,7 @@ spec = do
                    , R._end = R.Position {R._line = 1, R._column = 36}
                    })
                 "aMethod")
+             TInt
              []
              [ R.At
                  (R.Region
@@ -201,7 +234,8 @@ spec = do
                     (Just
                        (R.At
                           (R.Region
-                             { R._start = R.Position {R._line = 3, R._column = 14}
+                             { R._start =
+                                 R.Position {R._line = 3, R._column = 14}
                              , R._end = R.Position {R._line = 3, R._column = 15}
                              })
                           (Int 4))))

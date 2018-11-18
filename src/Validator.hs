@@ -1,9 +1,12 @@
 module Validator where
 
 import AST
-import Control.Monad.Trans.State
+import Control.Monad.Trans.State (State, get, runState, state)
+import Data.List (foldl')
+import Data.Map (Map)
 import Data.Set (Set)
 
+import qualified Data.Map as Map
 import qualified Data.Set as Set
 import qualified Region as R
 
@@ -20,81 +23,206 @@ import qualified Region as R
 data ErrorType
   = VarAlreadyDeclaredError
   | VarNotDeclaredError
+  | MethodAlreadyDeclaredError
   | MethodNotDeclaredError
-  deriving (Eq)
-
-instance Show ErrorType where
-  show VarAlreadyDeclaredError = "Variable already declared"
-  show VarNotDeclaredError = "Variable was not declared"
-  show MethodNotDeclaredError = "Called method was not declared"
+  | MissingMainError
+  | ExpectingNonVoidMethodError
+  | ReturnsValueInVoidMethodError
+  | MissingReturnValueInNonVoidMethodError
+  | IllegalReturnMethodError
+  | ExpectingReturnStatementError
+  | DuplicateArgumentError
+  deriving (Show, Eq)
 
 data SymbolTable = SymbolTable
   { _parentTable :: Maybe SymbolTable
   , _variableSet :: Set String
-  , _methodSet :: Set String
-  , _currentMethod :: String
-  } deriving (Eq, Show)
+  , _methodMap :: Map String ReturnType
+  , _scope :: Scope
+  } deriving (Show, Eq)
 
 data Error = Error
   { _location :: R.Region
-  , _errorMsg :: ErrorType
-  } deriving (Eq, Show)
+  , _errorType :: ErrorType
+  } deriving (Show, Eq)
 
-emptyTable :: String -> SymbolTable
-emptyTable methodName =
+data Scope
+  = GlobalScope
+  | MainMethodScope
+  | MethodScope String
+                ReturnType
+  | AnonymousScope
+  deriving (Show, Eq)
+
+emptyTable :: Scope -> SymbolTable
+emptyTable scope =
   SymbolTable
     { _parentTable = Nothing
     , _variableSet = Set.empty
-    , _methodSet = Set.empty
-    , _currentMethod = methodName
+    , _methodMap = Map.empty
+    , _scope = scope
     }
 
-validateAst :: Program -> Either String Program
-validateAst program = Right program
+createChildSymbolTable :: Scope -> SymbolTable -> SymbolTable
+createChildSymbolTable scope symbolTable =
+  SymbolTable
+    { _parentTable = Just symbolTable
+    , _variableSet = Set.empty
+    , _methodMap = Map.empty
+    , _scope = scope
+    }
 
--- only method names are stored in the global table
-createGlobalSymbolTable :: Program -> SymbolTable
-createGlobalSymbolTable methods = foldr addMethod initialTable methods
-  where
-    initialTable = emptyTable ""
-    addMethod =
-      \locatedMethod table ->
-        let name =
-              case locatedMethod of
-                Main _ -> ""
-                Method locatedName _ _ -> R.unlocate locatedName
-            methodSet = _methodSet table
-         in table {_methodSet = Set.insert name methodSet}
+-- will return the same table if there's no parent table
+-- TODO: see if we can improve this
+parentSymbolTable :: SymbolTable -> SymbolTable
+parentSymbolTable symbolTable =
+  case _parentTable symbolTable of
+    Just table -> table
+    Nothing -> symbolTable
+
+mainMethodName :: String
+mainMethodName = "main"
+
+-- just some dummy position to report the 'missing main' error
+mainMethodRegion :: R.Region
+mainMethodRegion =
+  R.Region
+    { R._start = R.Position {R._line = 1, R._column = 1}
+    , R._end = R.Position {R._line = 1, R._column = 1}
+    }
+
+-- 1. create global symbol table (all functions) -- done
+-- 2. check that main method exists -- done
+-- 3. validate all methods, each of which have their own symbol table -- done
+validateAst :: Program -> Either [Error] Program
+validateAst program =
+  let (errors, globalSymbolTable) = createGlobalSymbolTable program
+      doesMainMethodExist =
+        Map.member mainMethodName (_methodMap globalSymbolTable)
+   in case errors of
+        [] ->
+          if doesMainMethodExist
+            then let moreErrors = validateMethods program globalSymbolTable
+                  in case moreErrors of
+                       [] -> Right program
+                       _ -> Left $ reverse (moreErrors ++ errors) -- errors are preppended for efficiency 
+                                                                  -- so we have to reverse them
+            else Left $
+                 [createErrorAt mainMethodRegion MissingMainError] ++ errors
+        _ -> Left errors
 
 type ValidationState = ([Error], SymbolTable)
 
--- check in method declaration that argument names are not repeated
--- validate statements in method
-validateMethod :: AbstractMethod -> SymbolTable -> Either [Error] SymbolTable
-validateMethod (Main locatedStatements) symbolTable =
-  let (_, finalState) =
-        runState (validateStatements locatedStatements) initialState
+createGlobalSymbolTable :: Program -> ValidationState
+createGlobalSymbolTable methods =
+  foldl' addMethod ([], (emptyTable GlobalScope)) methods
+  where
+    addMethod =
+      \(errors, table) method ->
+        let (locatedMethodName, returnType) =
+              case method of
+                Main _ -> (R.At mainMethodRegion mainMethodName, TVoid)
+                Method locatedName retType _ _ -> (locatedName, retType)
+            methodName = R.unlocate locatedMethodName
+            methodMap = _methodMap table
+            alreadyExists = Map.member methodName methodMap
+         in if alreadyExists
+              then ( createError locatedMethodName MethodAlreadyDeclaredError :
+                     errors
+                   , table)
+              else ( errors
+                   , table
+                       {_methodMap = Map.insert methodName returnType methodMap})
+
+validateMethods :: Program -> SymbolTable -> [Error]
+validateMethods methods symbolTable = foldr validate [] methods
+  where
+    validate =
+      \method errors ->
+        let newErrors = validateMethod method symbolTable
+         in newErrors ++ errors
+
+validateMethod :: AbstractMethod -> SymbolTable -> [Error]
+validateMethod method symbolTable =
+  validateMethod' scope validationState symbolTable
+  where
+    scope =
+      case method of
+        Main _ -> MainMethodScope
+        Method (R.At _ methodName) returnType _ _ ->
+          MethodScope methodName returnType
+    validationState =
+      case method of
+        Main locatedStatements -> validateStatements locatedStatements
+        Method _ _ locatedArgs locatedStatements -> do
+          validateArguments locatedArgs
+          validateStatements locatedStatements
+          validateReturnControlFlow locatedStatements
+
+validateMethod' :: Scope -> State ValidationState () -> SymbolTable -> [Error]
+validateMethod' scope validationState symbolTable =
+  let methodSymbolTable = createChildSymbolTable scope symbolTable
+      (_, finalState) = runState validationState initialState
         where
-          initialState = ([], symbolTable)
+          initialState = ([], methodSymbolTable)
       errors = fst finalState
    in case errors of
-        [] -> Right (snd finalState)
-        _ -> Left $ reverse errors -- errors are preppended for efficiency 
-                                   -- so we have to reverse them
-                                   -- TODO: might have to move this to an upper level
-validateMethod (Method _ _ _) _ = Left [] -- TODO
+        [] -> []
+        _ -> errors
+
+validateArguments :: [LocatedMethodArg] -> State ValidationState ()
+validateArguments locatedArgs =
+  state $ \(errors, symbolTable) ->
+    let updatedTable = foldr addArgToTable symbolTable locatedArgs
+          where
+            addArgToTable =
+              \locatedArg table -> addArgumentToTable locatedArg table
+     in case findDuplicates locatedArgs of
+          [] -> return (errors, updatedTable)
+          duplicates ->
+            let errs = foldr createErr errors duplicates
+                  where
+                    createErr =
+                      \dup acc -> createError dup DuplicateArgumentError : acc
+             in return (errs, updatedTable)
+
+findDuplicates :: [LocatedMethodArg] -> [LocatedMethodArg]
+findDuplicates args = findDuplicates' args [] Set.empty
+  where
+    findDuplicates' [] duplicates _ = duplicates
+    findDuplicates' (arg':args') duplicates visitedSet =
+      let unlocatedArg = R.unlocate arg'
+       in if Set.member unlocatedArg visitedSet
+            then findDuplicates' args' (arg' : duplicates) visitedSet
+            else findDuplicates'
+                   args'
+                   duplicates
+                   (Set.insert unlocatedArg visitedSet)
 
 validateStatements :: [LocatedStatement] -> State ValidationState ()
 validateStatements locatedStatements = mapM_ validateStatement locatedStatements
 
--- check all used variables are declared - done
--- check no duplicated variables - done
--- check all called methods exist - done
--- check variables do not clash with method arguments - done
--- There appears to be only 2 scopes in the language (if/else/while 
--- don't create new scopes):
--- - Main function scope
--- - Function scopes
+pushSymbolTable :: Scope -> State ValidationState ()
+pushSymbolTable scope =
+  state $ \(errors, symbolTable) ->
+    return (errors, createChildSymbolTable scope symbolTable)
+
+popSymbolTable :: State ValidationState ()
+popSymbolTable =
+  state $ \(errors, symbolTable) ->
+    return (errors, parentSymbolTable symbolTable)
+
+validateScopedStatements :: [LocatedStatement] -> State ValidationState ()
+validateScopedStatements locatedStatements = do
+  pushSymbolTable AnonymousScope
+  validateStatements locatedStatements
+  popSymbolTable
+
+-- 1. Check all used variables are declared - done
+-- 2. Check no duplicated variables - done
+-- 3. Check all called methods exist - done
+-- 4. Check variables do not clash with method arguments - done
+-- 5. if-else blocks should push a new scope - done
 validateStatement :: LocatedStatement -> State ValidationState ()
 validateStatement locatedStatement =
   case R.unlocate locatedStatement of
@@ -107,31 +235,30 @@ validateStatement locatedStatement =
       validateExpression locatedExpr
       validateVarDeclaration locatedVarName
     If locatedExpr ifStatements elseStatements -> do
-      validateStatements ifStatements
-      validateStatements elseStatements
+      validateScopedStatements ifStatements
+      validateScopedStatements elseStatements
       validateExpression locatedExpr
     While locatedExpr statements -> do
-      validateStatements statements
+      validateScopedStatements statements
       validateExpression locatedExpr
     CallMethod maybeLocatedVarName locatedMethodName locatedArgs -> do
       validateExpressions locatedArgs
-      validateMethodCall locatedMethodName
+      validateMethodCall locatedMethodName maybeLocatedVarName
       validateMaybeVarUsage maybeLocatedVarName
     CallRead locatedVarName -> validateVarUsage locatedVarName
-    Return maybeLocatedExpr -> validateMaybeExpression maybeLocatedExpr
+    Return maybeLocatedExpr -> do
+      validateReturnContext locatedStatement
+      validateMaybeExpression maybeLocatedExpr
 
--- TODO: ideally we should not allow variable declaration within if-else statements.
--- Current official implementation throws a JNI exception.
+-- Note: in contrast to official implementation, our if-else statements are scoped
+-- and local variable declarations are allowed. If you do that with the official 
+-- implementation it will throw a JNI error.
 validateVarDeclaration :: LocatedVarName -> State ValidationState ()
 validateVarDeclaration locatedVarName =
   state $ \(errors, symbolTable) ->
-    if containsVariable locatedVarName symbolTable
+    if isVariableInTable locatedVarName symbolTable
       then return
-             ( Error
-                 { _location = R.getLocation locatedVarName
-                 , _errorMsg = VarAlreadyDeclaredError
-                 } :
-               errors
+             ( createError locatedVarName VarAlreadyDeclaredError : errors
              , symbolTable)
       else return (errors, addVariableToTable locatedVarName symbolTable)
 
@@ -142,24 +269,35 @@ validateMaybeVarUsage Nothing = return ()
 validateVarUsage :: LocatedVarName -> State ValidationState ()
 validateVarUsage locatedVarName =
   state $ \(errors, symbolTable) ->
-    if containsVariable locatedVarName symbolTable
+    if isVariableInScope locatedVarName symbolTable
       then return (errors, addVariableToTable locatedVarName symbolTable)
       else return
-             ( Error
-                 { _location = R.getLocation locatedVarName
-                 , _errorMsg = VarNotDeclaredError
-                 } :
-               errors
+             ( createError locatedVarName VarNotDeclaredError : errors
              , symbolTable)
 
 addVariableToTable :: LocatedVarName -> SymbolTable -> SymbolTable
-addVariableToTable (R.At _ varName) table =
+addVariableToTable (R.At _ varName) table = addVariableToTable' varName table
+
+addVariableToTable' :: String -> SymbolTable -> SymbolTable
+addVariableToTable' varName table =
   let variableSet = _variableSet table
    in table {_variableSet = Set.insert varName variableSet}
 
-containsVariable :: LocatedVarName -> SymbolTable -> Bool
-containsVariable (R.At _ varName) table =
-  Set.member varName (_variableSet table)
+addArgumentToTable :: LocatedMethodArg -> SymbolTable -> SymbolTable
+addArgumentToTable (R.At _ (MethodArg argName)) table =
+  addVariableToTable' argName table
+
+isVariableInTable :: LocatedVarName -> SymbolTable -> Bool
+isVariableInTable (R.At _ varName) symbolTable =
+  Set.member varName (_variableSet symbolTable)
+
+isVariableInScope :: LocatedVarName -> SymbolTable -> Bool
+isVariableInScope locatedVarName symbolTable =
+  if isVariableInTable locatedVarName symbolTable
+    then True
+    else case _parentTable symbolTable of
+           Just parentTable -> isVariableInScope locatedVarName parentTable
+           Nothing -> False
 
 validateExpressions :: [LocatedExpr] -> State ValidationState ()
 validateExpressions locatedExprs = mapM_ validateExpression locatedExprs
@@ -177,28 +315,125 @@ validateMaybeExpression :: Maybe LocatedExpr -> State ValidationState ()
 validateMaybeExpression (Just expr) = validateExpression expr
 validateMaybeExpression Nothing = return ()
 
-validateMethodCall :: LocatedMethodName -> State ValidationState ()
-validateMethodCall locatedMethodName =
+-- 1. Check called method exists -- done
+-- 2. Check we're not calling a void method when storing result in a variable -- done
+validateMethodCall ::
+     LocatedMethodName -> Maybe LocatedVarName -> State ValidationState ()
+validateMethodCall locatedMethodName maybeVarName =
   state $ \(errors, symbolTable) ->
-    let maybeError = findMethod locatedMethodName $ Just symbolTable
-     in case maybeError of
-          Just err -> return (err : errors, symbolTable)
+    case findMethod locatedMethodName $ Just symbolTable of
+      Left err -> return (err : errors, symbolTable)
+      Right returnType ->
+        case maybeVarName of
+          Just _ ->
+            case returnType of
+              TVoid ->
+                return
+                  ( createError locatedMethodName ExpectingNonVoidMethodError :
+                    errors
+                  , symbolTable)
+              TInt -> return (errors, symbolTable)
           Nothing -> return (errors, symbolTable)
 
-findMethod :: LocatedMethodName -> Maybe SymbolTable -> Maybe Error
+findMethod :: LocatedMethodName -> Maybe SymbolTable -> Either Error ReturnType
 findMethod locatedMethodName maybeSymbolTable =
   case maybeSymbolTable of
     Just symbolTable ->
-      if containsMethod locatedMethodName symbolTable
-        then Nothing
-        else findMethod locatedMethodName $ _parentTable symbolTable
-    Nothing ->
-      Just
-        Error
-          { _location = R.getLocation locatedMethodName
-          , _errorMsg = MethodNotDeclaredError
-          }
+      case lookupLocatedMethod locatedMethodName symbolTable of
+        Just returnType -> Right returnType
+        Nothing -> Left err
+    Nothing -> Left err
+  where
+    err = createError locatedMethodName MethodNotDeclaredError
 
-containsMethod :: LocatedMethodName -> SymbolTable -> Bool
-containsMethod (R.At _ methodName) table =
-  Set.member methodName (_methodSet table)
+lookupLocatedMethod :: LocatedMethodName -> SymbolTable -> Maybe ReturnType
+lookupLocatedMethod (R.At _ methodName) table = lookupMethod methodName table
+
+lookupMethod :: String -> SymbolTable -> Maybe ReturnType
+lookupMethod methodName table =
+  let maybeReturnType = Map.lookup methodName (_methodMap table)
+   in case maybeReturnType of
+        Just returnType -> Just returnType
+        Nothing ->
+          case _parentTable table of
+            Nothing -> Nothing
+            Just parentTable -> lookupMethod methodName parentTable
+
+validateReturnContext :: LocatedStatement -> State ValidationState ()
+validateReturnContext locatedStatement = do
+  (_, symbolTable) <- get
+  case _scope symbolTable of
+    MethodScope _ returnType ->
+      validateReturnStatement locatedStatement returnType
+    AnonymousScope ->
+      let methodScope = findMethodScope symbolTable
+       in case methodScope of
+            MethodScope _ returnType ->
+              validateReturnStatement locatedStatement returnType
+            _ -> returnValidationError locatedStatement
+    _ -> returnValidationError locatedStatement
+
+returnValidationError :: LocatedStatement -> State ValidationState ()
+returnValidationError locatedStatement =
+  state $ \(errors, symbolTable) ->
+    return
+      ( createError locatedStatement IllegalReturnMethodError : errors
+      , symbolTable)
+
+validateReturnStatement ::
+     LocatedStatement -> ReturnType -> State ValidationState ()
+validateReturnStatement (R.At region (Return maybeLocatedReturnExpr)) returnType =
+  state $ \(errors, symbolTable) ->
+    case maybeLocatedReturnExpr of
+      Just locatedReturnExpr ->
+        case returnType of
+          TInt -> return (errors, symbolTable)
+          TVoid ->
+            return
+              ( createError locatedReturnExpr ReturnsValueInVoidMethodError :
+                errors
+              , symbolTable)
+      Nothing ->
+        case returnType of
+          TInt ->
+            return
+              ( createErrorAt region MissingReturnValueInNonVoidMethodError :
+                errors
+              , symbolTable)
+          TVoid -> return (errors, symbolTable)
+validateReturnStatement locatedStatement _ =
+  state $ \(errors, symbolTable) ->
+    return
+      ( createError locatedStatement ExpectingReturnStatementError : errors
+      , symbolTable)
+
+-- Check non-void functions must return in the last statement. This could be improved
+-- by performing flow analysis but it's simpler to force the last statement to
+-- be a valid return statement.
+validateReturnControlFlow :: [LocatedStatement] -> State ValidationState ()
+validateReturnControlFlow locatedStatements = do
+  (_, symbolTable) <- get
+  let methodScope = findMethodScope symbolTable
+   in case methodScope of
+        MethodScope _ returnType ->
+          validateReturnStatement (last locatedStatements) returnType
+        _ -> return ()
+
+-- finds the method scope of the given symbol table. 
+-- Only anonymous scopes (if-else/while blocks) have a parent method scope.
+findMethodScope :: SymbolTable -> Scope
+findMethodScope symbolTable =
+  let scope = _scope symbolTable
+   in case scope of
+        AnonymousScope ->
+          case _parentTable symbolTable of
+            Nothing -> scope
+            Just parentTable -> findMethodScope parentTable
+        _ -> scope
+
+createError :: R.Located a -> ErrorType -> Error
+createError (R.At region _) errorType = createErrorAt region errorType
+
+createErrorAt :: R.Region -> ErrorType -> Error
+createErrorAt region errorType =
+  Error {_location = region, _errorType = errorType}

@@ -2,90 +2,81 @@ module Validator.CallMethodSpec where
 
 import AST
 import Control.Monad.Trans.State
+import qualified Data.Map as Map
 import qualified Data.Set as Set
-import qualified Region as R
 import Test.Hspec
+import TestHelper (errorRegion, located, locatedE)
 import Validator
-
-dummyRegion :: R.Region
-dummyRegion =
-  R.Region
-    { R._start = R.Position {R._line = 1, R._column = 1}
-    , R._end = R.Position {R._line = 1, R._column = 2}
-    }
 
 spec :: Spec
 spec = do
   describe "called method name validation" $ do
     it "should succeed if method exists" $ do
-      let statement =
-            R.At dummyRegion $ CallMethod Nothing (R.At dummyRegion "foo") []
+      let statement = located $ CallMethod Nothing (located "foo") []
+      let parentTable =
+            (emptyTable GlobalScope) {_methodMap = Map.singleton "foo" TVoid}
       let initialState =
-            ([], (emptyTable "") {_methodSet = Set.singleton "foo"})
+            ([], (emptyTable MainMethodScope) {_parentTable = Just parentTable})
       let expectedResult = initialState
       runState (validateStatement statement) initialState `shouldBe`
         ((), expectedResult)
       --
     it "should fail if method does not exist" $ do
-      let errorRegion =
-            R.Region
-              { R._start = R.Position {R._line = 5, R._column = 29}
-              , R._end = R.Position {R._line = 5, R._column = 32}
-              }
-      let statement =
-            R.At dummyRegion $ CallMethod Nothing (R.At errorRegion "foo") []
-      let initialState = ([], emptyTable "")
+      let statement = located $ CallMethod Nothing (locatedE "foo") []
+      let initialState =
+            ( []
+            , (emptyTable MainMethodScope)
+                {_parentTable = Just $ emptyTable GlobalScope})
       let expectedResult =
-            ( [Error {_location = errorRegion, _errorMsg = MethodNotDeclaredError}]
-            , emptyTable "")
+            ([createErrorAt errorRegion MethodNotDeclaredError], snd initialState)
       runState (validateStatement statement) initialState `shouldBe`
         ((), expectedResult)
       --
   describe "arguments validation" $ do
     it "should succeed if arguments are valid" $ do
       let statement =
-            R.At dummyRegion $
+            located $
             CallMethod
               Nothing
-              (R.At dummyRegion "foo")
-              [(R.At dummyRegion $ Int 4), (R.At dummyRegion $ Var "a")]
+              (located "foo")
+              [(located $ Int 4), (located $ Var "a")]
+      let parentTable =
+            (emptyTable GlobalScope) {_methodMap = Map.singleton "foo" TVoid}
       let initialState =
             ( []
-            , (emptyTable "")
-                { _methodSet = Set.singleton "foo"
+            , (emptyTable MainMethodScope)
+                { _parentTable = Just $ parentTable
                 , _variableSet = Set.singleton "a"
                 })
       let expectedResult = initialState
       runState (validateStatement statement) initialState `shouldBe`
         ((), expectedResult)
     it "should fail if arguments are invalid" $ do
-      let errorRegion =
-            R.Region
-              { R._start = R.Position {R._line = 5, R._column = 29}
-              , R._end = R.Position {R._line = 5, R._column = 32}
-              }
       let statement =
-            R.At dummyRegion $
+            located $
             CallMethod
               Nothing
-              (R.At dummyRegion "foo")
-              [(R.At dummyRegion $ Int 4), (R.At errorRegion $ Var "a")]
+              (located "foo")
+              [(located $ Int 4), (locatedE $ Var "a")]
+      let parentTable =
+            (emptyTable GlobalScope) {_methodMap = Map.singleton "foo" TVoid}
       let initialState =
-            ([], (emptyTable "") {_methodSet = Set.singleton "foo"})
+            ( []
+            , (emptyTable MainMethodScope) {_parentTable = Just $ parentTable})
       let expectedResult =
-            ( [Error {_location = errorRegion, _errorMsg = VarNotDeclaredError}]
-            , (emptyTable "") {_methodSet = Set.singleton "foo"})
+            ([createErrorAt errorRegion VarNotDeclaredError], snd initialState)
       runState (validateStatement statement) initialState `shouldBe`
         ((), expectedResult)
   describe "storage variable validation" $ do
     it "should succeed if variable exists" $ do
       let statement =
-            R.At dummyRegion $
-            CallMethod (Just $ R.At dummyRegion "a") (R.At dummyRegion "foo") []
+            located $ CallMethod (Just $ located "a") (located "foo") []
+      let parentTable =
+            (emptyTable GlobalScope) {_methodMap = Map.singleton "foo" TInt}
       let initialState =
             ( []
-            , (emptyTable "")
-                { _methodSet = Set.singleton "foo"
+            , (emptyTable MainMethodScope)
+                { _parentTable = Just parentTable
                 , _variableSet = Set.singleton "a"
                 })
       let expectedResult = initialState
@@ -93,18 +84,30 @@ spec = do
         ((), expectedResult)
       --
     it "should fail if variable does not exist" $ do
-      let errorRegion =
-            R.Region
-              { R._start = R.Position {R._line = 5, R._column = 29}
-              , R._end = R.Position {R._line = 5, R._column = 32}
-              }
       let statement =
-            R.At dummyRegion $
-            CallMethod (Just $ R.At errorRegion "a") (R.At dummyRegion "foo") []
+            located $ CallMethod (Just $ locatedE "a") (located "foo") []
+      let parentTable =
+            (emptyTable GlobalScope) {_methodMap = Map.singleton "foo" TInt}
       let initialState =
-            ([], (emptyTable "") {_methodSet = Set.singleton "foo"})
+            ( []
+            , (emptyTable MainMethodScope) {_parentTable = Just $ parentTable})
       let expectedResult =
-            ( [Error {_location = errorRegion, _errorMsg = VarNotDeclaredError}]
-            , (emptyTable "") {_methodSet = Set.singleton "foo"})
+            ([createErrorAt errorRegion VarNotDeclaredError], snd initialState)
+      runState (validateStatement statement) initialState `shouldBe`
+        ((), expectedResult)
+    it "should fail if trying to store a variable when the method is void" $ do
+      let statement =
+            located $ CallMethod (Just $ located "a") (locatedE "foo") []
+      let parentTable =
+            (emptyTable GlobalScope) {_methodMap = Map.singleton "foo" TVoid}
+      let initialState =
+            ( []
+            , (emptyTable MainMethodScope)
+                { _parentTable = Just parentTable
+                , _variableSet = Set.singleton "a"
+                })
+      let expectedResult =
+            ( [createErrorAt errorRegion ExpectingNonVoidMethodError]
+            , snd initialState)
       runState (validateStatement statement) initialState `shouldBe`
         ((), expectedResult)

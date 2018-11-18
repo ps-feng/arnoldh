@@ -3,17 +3,17 @@ module Region where
 data Region = Region
   { _start :: Position
   , _end :: Position
-  } deriving (Eq, Show)
+  } deriving (Eq, Show, Ord)
 
 data Position = Position
   { _line :: Int
   , _column :: Int
-  } deriving (Eq, Show)
+  } deriving (Eq, Show, Ord)
 
 data Located a =
   At Region
      a
-  deriving (Eq, Show)
+  deriving (Eq, Show, Ord)
 
 instance Functor Located where
   fmap f val = locate (f $ unlocate val) val

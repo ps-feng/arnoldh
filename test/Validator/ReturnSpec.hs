@@ -3,40 +3,62 @@ module Validator.ReturnSpec where
 import AST
 import Control.Monad.Trans.State
 import qualified Data.Set as Set
-import qualified Region as R
 import Test.Hspec
+import TestHelper (errorRegion, located, locatedE)
 import Validator
-
-dummyRegion :: R.Region
-dummyRegion =
-  R.Region
-    { R._start = R.Position {R._line = 1, R._column = 1}
-    , R._end = R.Position {R._line = 1, R._column = 2}
-    }
 
 spec :: Spec
 spec = do
   describe "return validation" $ do
-    it "should succeed if returned expression is valid" $ do
-      let statement =
-            R.At dummyRegion (Return $ Just $ R.At dummyRegion $ Var "a")
+    it "should succeed if returns an existing variable" $ do
+      let statement = located (Return $ Just $ located $ Var "a")
       let initialState =
-            ([], (emptyTable "") {_variableSet = Set.singleton "a"})
+            ( []
+            , (emptyTable $ MethodScope "foo" TInt)
+                {_variableSet = Set.singleton "a"})
       let expectedResult = initialState
       runState (validateStatement statement) initialState `shouldBe`
         ((), expectedResult)
-      --
-    it "should fail if returned expression is not valid" $ do
-      let errorRegion =
-            R.Region
-              { R._start = R.Position {R._line = 5, R._column = 29}
-              , R._end = R.Position {R._line = 5, R._column = 30}
-              }
-      let statement =
-            R.At dummyRegion (Return $ Just $ R.At errorRegion $ Var "a")
-      let initialState = ([], (emptyTable ""))
+    --
+    it "should fail if returns an inexistent variable" $ do
+      let statement = located (Return $ Just $ locatedE $ Var "a")
+      let parentTable = emptyTable MainMethodScope
+      let initialState =
+            ( []
+            , (emptyTable $ MethodScope "foo" TInt)
+                {_parentTable = Just parentTable})
       let expectedResult =
-            ( [Error {_location = errorRegion, _errorMsg = VarNotDeclaredError}]
+            ([createErrorAt errorRegion VarNotDeclaredError], snd initialState)
+      runState (validateStatement statement) initialState `shouldBe`
+        ((), expectedResult)
+    --
+    it "should fail if returns a value in a void function" $ do
+      let statement = located (Return $ Just $ locatedE $ Int 5)
+      let parentTable = emptyTable MainMethodScope
+      let initialState =
+            ( []
+            , (emptyTable $ MethodScope "foo" TVoid)
+                {_parentTable = Just parentTable})
+      let expectedResult =
+            ( [createErrorAt errorRegion ReturnsValueInVoidMethodError]
+            , snd initialState)
+      runState (validateStatement statement) initialState `shouldBe`
+        ((), expectedResult)
+    --
+    it "should fail if doesn't return a value in a non-void function" $ do
+      let statement = locatedE (Return Nothing)
+      let initialState = ([], (emptyTable $ MethodScope "foo" TInt))
+      let expectedResult =
+            ( [createErrorAt errorRegion MissingReturnValueInNonVoidMethodError]
+            , snd initialState)
+      runState (validateStatement statement) initialState `shouldBe`
+        ((), expectedResult)
+    --
+    it "should fail if returning within main method" $ do
+      let statement = locatedE (Return Nothing)
+      let initialState = ([], emptyTable MainMethodScope)
+      let expectedResult =
+            ( [createErrorAt errorRegion IllegalReturnMethodError]
             , snd initialState)
       runState (validateStatement statement) initialState `shouldBe`
         ((), expectedResult)

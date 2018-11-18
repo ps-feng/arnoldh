@@ -30,6 +30,7 @@ spec = do
                     , R._end = R.Position {R._line = 1, R._column = 36}
                     })
                  "aMethod")
+              TVoid
               []
               []
           , Main []
@@ -40,18 +41,19 @@ spec = do
                     , R._end = R.Position {R._line = 5, R._column = 37}
                     })
                  "aMethod2")
+              TVoid
               [ R.At
                   (R.Region
                      { R._start = R.Position {R._line = 6, R._column = 52}
                      , R._end = R.Position {R._line = 6, R._column = 56}
                      })
-                  (Var "arg1")
+                  (MethodArg "arg1")
               , R.At
                   (R.Region
                      { R._start = R.Position {R._line = 7, R._column = 52}
                      , R._end = R.Position {R._line = 7, R._column = 56}
                      })
-                  (Var "arg2")
+                  (MethodArg "arg2")
               ]
               []
           ]
