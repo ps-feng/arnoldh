@@ -1,23 +1,20 @@
 module Lib
-    ( someFunc
-    ) where
+  ( compileProgram
+  ) where
 
-import Parser
+import Parser (programParser)
+import Reporting (mapParserErrorToString, mapValidatorErrorToString)
 import Text.Megaparsec
+import Validator
 
-input :: String
-input = "LISTEN TO ME VERY CAREFULLY aMethod\n\
-\HASTA LA VISTA, BABY\n\
-\\
-\IT'S SHOWTIME\n\
-\YOU HAVE BEEN TERMINATED\n\
-\\
-\LISTEN TO ME VERY CAREFULLY aMethod2\n\
-\I NEED YOUR CLOTHES YOUR BOOTS AND YOUR MOTORCYCLE arg1\n\
-\I NEED YOUR CLOTHES YOUR BOOTS AND YOUR MOTORCYCLE arg2\n\
-\HASTA LA VISTA, BABY\n"
-
-someFunc :: IO ()
-someFunc = do
-    parseTest programParser input
-
+compileProgram :: FilePath -> String -> IO ()
+compileProgram filePath input =
+  let validation = do
+        parsedProgram <-
+          mapParserErrorToString $ parse programParser filePath input
+        _ <-
+          mapValidatorErrorToString filePath input $ validateAst parsedProgram
+        return $ Right parsedProgram
+   in case validation of
+        Left err -> putStr err
+        Right _ -> putStrLn "To guay"

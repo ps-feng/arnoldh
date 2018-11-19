@@ -97,7 +97,7 @@ spec = do
         whileStatementParser
         "STICK AROUND a\n\
         \TALK TO THE HAND \"a is true\"\n\
-        \CHILL" `shouldBe`
+        \CHILL\n" `shouldBe`
         Just
           (While
              (R.At

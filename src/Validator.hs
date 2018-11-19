@@ -26,10 +26,10 @@ data ErrorType
   | MethodAlreadyDeclaredError
   | MethodNotDeclaredError
   | MissingMainError
-  | ExpectingNonVoidMethodError
+  | StoringResultFromVoidMethodError
   | ReturnsValueInVoidMethodError
   | MissingReturnValueInNonVoidMethodError
-  | IllegalReturnMethodError
+  | IllegalReturnStatementError
   | ExpectingReturnStatementError
   | DuplicateArgumentError
   deriving (Show, Eq)
@@ -117,30 +117,28 @@ createGlobalSymbolTable :: Program -> ValidationState
 createGlobalSymbolTable methods =
   foldl' addMethod ([], (emptyTable GlobalScope)) methods
   where
-    addMethod =
-      \(errors, table) method ->
-        let (locatedMethodName, returnType) =
-              case method of
-                Main _ -> (R.At mainMethodRegion mainMethodName, TVoid)
-                Method locatedName retType _ _ -> (locatedName, retType)
-            methodName = R.unlocate locatedMethodName
-            methodMap = _methodMap table
-            alreadyExists = Map.member methodName methodMap
-         in if alreadyExists
-              then ( createError locatedMethodName MethodAlreadyDeclaredError :
-                     errors
-                   , table)
-              else ( errors
-                   , table
-                       {_methodMap = Map.insert methodName returnType methodMap})
+    addMethod (errors, table) method =
+      let (locatedMethodName, returnType) =
+            case method of
+              Main _ -> (R.At mainMethodRegion mainMethodName, TVoid)
+              Method locatedName retType _ _ -> (locatedName, retType)
+          methodName = R.unlocate locatedMethodName
+          methodMap = _methodMap table
+          alreadyExists = Map.member methodName methodMap
+       in if alreadyExists
+            then ( createError locatedMethodName MethodAlreadyDeclaredError :
+                   errors
+                 , table)
+            else ( errors
+                 , table
+                     {_methodMap = Map.insert methodName returnType methodMap})
 
 validateMethods :: Program -> SymbolTable -> [Error]
 validateMethods methods symbolTable = foldr validate [] methods
   where
-    validate =
-      \method errors ->
-        let newErrors = validateMethod method symbolTable
-         in newErrors ++ errors
+    validate method errors =
+      let newErrors = validateMethod method symbolTable
+       in newErrors ++ errors
 
 validateMethod :: AbstractMethod -> SymbolTable -> [Error]
 validateMethod method symbolTable =
@@ -175,15 +173,14 @@ validateArguments locatedArgs =
   state $ \(errors, symbolTable) ->
     let updatedTable = foldr addArgToTable symbolTable locatedArgs
           where
-            addArgToTable =
-              \locatedArg table -> addArgumentToTable locatedArg table
+            addArgToTable locatedArg table = addArgumentToTable locatedArg table
      in case findDuplicates locatedArgs of
           [] -> return (errors, updatedTable)
           duplicates ->
             let errs = foldr createErr errors duplicates
                   where
-                    createErr =
-                      \dup acc -> createError dup DuplicateArgumentError : acc
+                    createErr dup acc =
+                      createError dup DuplicateArgumentError : acc
              in return (errs, updatedTable)
 
 findDuplicates :: [LocatedMethodArg] -> [LocatedMethodArg]
@@ -329,7 +326,9 @@ validateMethodCall locatedMethodName maybeVarName =
             case returnType of
               TVoid ->
                 return
-                  ( createError locatedMethodName ExpectingNonVoidMethodError :
+                  ( createError
+                      locatedMethodName
+                      StoringResultFromVoidMethodError :
                     errors
                   , symbolTable)
               TInt -> return (errors, symbolTable)
@@ -377,7 +376,7 @@ returnValidationError :: LocatedStatement -> State ValidationState ()
 returnValidationError locatedStatement =
   state $ \(errors, symbolTable) ->
     return
-      ( createError locatedStatement IllegalReturnMethodError : errors
+      ( createError locatedStatement IllegalReturnStatementError : errors
       , symbolTable)
 
 validateReturnStatement ::

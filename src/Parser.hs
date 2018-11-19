@@ -40,7 +40,11 @@ type Parser = Parsec Void String
 spaceConsumer :: Parser ()
 spaceConsumer = void $ many $ oneOf [' ', '\t']
 
+voidConsumer :: Parser ()
+voidConsumer = return ()
+
 -- Uses default built-in space skipper, which includes newlines.
+-- TODO: verify this because it causes some issues like 'end of main' requiring a newline
 eolConsumer :: Parser ()
 eolConsumer = space1
 
@@ -49,14 +53,13 @@ lexeme :: Parser a -> Parser a
 lexeme = L.lexeme spaceConsumer
 
 -- TODO: check usages of 'symbol' as we should probably enforce at least 1 whitespace in some cases
+-- TODO: check space consumption. Might be better to not consume any here, as this causes the internal
+--       ending column state of the parser to count also the whitespace.
 symbol :: String -> Parser String
 symbol = L.symbol spaceConsumer
 
 integerParser :: Parser Integer
 integerParser = lexeme L.decimal
-
-voidConsumer :: Parser ()
-voidConsumer = return ()
 
 signedIntegerParser :: Parser Integer
 signedIntegerParser = L.signed voidConsumer integerParser
@@ -178,7 +181,7 @@ whileStatementParser = do
   symbol "STICK AROUND"
   condition <- operandParser <* eolConsumer
   statements <- many statementParser
-  symbol "CHILL"
+  symbol "CHILL" >> eolConsumer
   return (While condition statements)
 
 callMethodStatementParser :: Parser Statement

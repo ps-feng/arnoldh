@@ -58,7 +58,7 @@ spec = do
       let statement = locatedE (Return Nothing)
       let initialState = ([], emptyTable MainMethodScope)
       let expectedResult =
-            ( [createErrorAt errorRegion IllegalReturnMethodError]
+            ( [createErrorAt errorRegion IllegalReturnStatementError]
             , snd initialState)
       runState (validateStatement statement) initialState `shouldBe`
         ((), expectedResult)

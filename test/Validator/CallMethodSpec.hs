@@ -28,7 +28,8 @@ spec = do
             , (emptyTable MainMethodScope)
                 {_parentTable = Just $ emptyTable GlobalScope})
       let expectedResult =
-            ([createErrorAt errorRegion MethodNotDeclaredError], snd initialState)
+            ( [createErrorAt errorRegion MethodNotDeclaredError]
+            , snd initialState)
       runState (validateStatement statement) initialState `shouldBe`
         ((), expectedResult)
       --
@@ -107,7 +108,7 @@ spec = do
                 , _variableSet = Set.singleton "a"
                 })
       let expectedResult =
-            ( [createErrorAt errorRegion ExpectingNonVoidMethodError]
+            ( [createErrorAt errorRegion StoringResultFromVoidMethodError]
             , snd initialState)
       runState (validateStatement statement) initialState `shouldBe`
         ((), expectedResult)
