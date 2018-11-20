@@ -34,7 +34,7 @@ ghc-options:
 - -Werror
 
 executables:
-  ArnoldH-exe:
+  arnoldH:
     main:                Main.hs
     source-dirs:         app
     ghc-options:

@@ -1,14 +1,27 @@
-module Reporting where
+module Reporting
+  ( mapParserErrorToString
+  , mapValidatorErrorToString
+  , prettyPrintErrors
+  ) where
 
 import Data.Bifunctor (first)
-import Region as R
 import Text.Megaparsec.Error
   ( ParseError
   , ShowErrorComponent
   , ShowToken
   , parseErrorPretty
   )
-import Validator as V
+
+import qualified Formatting as F
+import qualified Region as R
+import qualified Validator as V
+
+prettyPrintErrors :: String -> IO ()
+prettyPrintErrors errs =
+  putStr $
+  F.eol1 ++
+  commonHeader ++ F.eol2 ++
+  errs
 
 -- TODO: is there a way to merge the next 2 functions cleanly?
 mapParserErrorToString ::
@@ -23,7 +36,7 @@ mapValidatorErrorToString ::
      FilePath -> String -> Either [V.Error] a -> Either String a
 mapValidatorErrorToString filePath input result =
   let inputLines = lines input
-      errToString err errStr = 
+      errToString err errStr =
         validationErrorString err filePath inputLines ++ errStr
       errorsToString errs = foldr errToString "" errs
    in first errorsToString result
@@ -38,40 +51,38 @@ validationErrorString err filePath inputLines =
       startColumn = (R._column $ R._start location) - 1
       endColumn = (R._column $ R._end location) - 1
       markerLen = endColumn - startColumn
-      errorMarker = indent startColumn ++ markError markerLen
-   in headline ++ eol 1 ++ 
-      indent 4 ++ errorType ++ eol 2 ++ 
-      indent 4 ++ errorLine ++ eol 1 ++
-      indent 4 ++ errorMarker ++ eol 2
+      errorMarker = F.indent startColumn ++ F.caret markerLen
+   in headline ++ F.eol1 ++
+      F.indent4 ++ errorType ++ F.eol2 ++
+      F.indent4 ++ errorLine ++ F.eol1 ++
+      F.indent4 ++ errorMarker ++ F.eol2
 
 newtype ValidationErrorType =
   ValidationErrorType V.ErrorType
 
 instance Show ValidationErrorType where
-  show (ValidationErrorType VarAlreadyDeclaredError) =
+  show (ValidationErrorType V.VarAlreadyDeclaredError) =
     "Variable was already declared"
-  show (ValidationErrorType VarNotDeclaredError) = "Variable was not declared"
-  show (ValidationErrorType MethodAlreadyDeclaredError) =
+  show (ValidationErrorType V.VarNotDeclaredError) = "Variable was not declared"
+  show (ValidationErrorType V.MethodAlreadyDeclaredError) =
     "Method was already declared"
-  show (ValidationErrorType MethodNotDeclaredError) = "Method was not declared"
-  show (ValidationErrorType MissingMainError) = "Missing main method"
-  show (ValidationErrorType StoringResultFromVoidMethodError) =
+  show (ValidationErrorType V.MethodNotDeclaredError) =
+    "Method was not declared"
+  show (ValidationErrorType V.MissingMainError) = "Missing main method"
+  show (ValidationErrorType V.StoringResultFromVoidMethodError) =
     "Cannot store the result of a void method"
-  show (ValidationErrorType ReturnsValueInVoidMethodError) =
+  show (ValidationErrorType V.ReturnsValueInVoidMethodError) =
     "Void method cannot return a value"
-  show (ValidationErrorType MissingReturnValueInNonVoidMethodError) =
+  show (ValidationErrorType V.MissingReturnValueInNonVoidMethodError) =
     "Non-void method should return a value"
-  show (ValidationErrorType IllegalReturnStatementError) =
+  show (ValidationErrorType V.IllegalReturnStatementError) =
     "Can only return from a non-void method"
-  show (ValidationErrorType ExpectingReturnStatementError) =
+  show (ValidationErrorType V.ExpectingReturnStatementError) =
     "Expecting a return statement here"
-  show (ValidationErrorType DuplicateArgumentError) = "Duplicated argument"
+  show (ValidationErrorType V.DuplicateArgumentError) = "Duplicated argument"
 
-markError :: Int -> String
-markError n = replicate n '^'
-
-indent :: Int -> String
-indent n = replicate n ' '
-
-eol :: Int -> String
-eol n = replicate n '\n'
+commonHeader :: String
+commonHeader =
+  "****************************\n\
+  \WHAT THE FUCK DID I DO WRONG\n\
+  \****************************"

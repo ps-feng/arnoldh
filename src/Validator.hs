@@ -134,11 +134,9 @@ createGlobalSymbolTable methods =
                      {_methodMap = Map.insert methodName returnType methodMap})
 
 validateMethods :: Program -> SymbolTable -> [Error]
-validateMethods methods symbolTable = foldr validate [] methods
+validateMethods methods symbolTable = foldl' validate [] methods
   where
-    validate method errors =
-      let newErrors = validateMethod method symbolTable
-       in newErrors ++ errors
+    validate errors method = validateMethod method symbolTable ++ errors
 
 validateMethod :: AbstractMethod -> SymbolTable -> [Error]
 validateMethod method symbolTable =
@@ -414,8 +412,8 @@ validateReturnControlFlow locatedStatements = do
   (_, symbolTable) <- get
   let methodScope = findMethodScope symbolTable
    in case methodScope of
-        MethodScope _ returnType ->
-          validateReturnStatement (last locatedStatements) returnType
+        MethodScope _ TInt ->
+          validateReturnStatement (last locatedStatements) TInt
         _ -> return ()
 
 -- finds the method scope of the given symbol table. 

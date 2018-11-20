@@ -266,7 +266,6 @@ methodParser = do
 abstractMethodParser :: Parser AbstractMethod
 abstractMethodParser = mainMethodParser <|> methodParser
 
--- TODO: parse error "WHAT THE FUCK DID I DO WRONG"
 programParser :: Parser Program
 programParser = do
   methods <- some abstractMethodParser
