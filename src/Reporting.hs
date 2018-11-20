@@ -1,7 +1,6 @@
 module Reporting where
 
 import Data.Bifunctor (first)
-import Data.List (foldl')
 import Region as R
 import Text.Megaparsec.Error
   ( ParseError
@@ -24,9 +23,9 @@ mapValidatorErrorToString ::
      FilePath -> String -> Either [V.Error] a -> Either String a
 mapValidatorErrorToString filePath input result =
   let inputLines = lines input
-      errToString errStr err = 
-        errStr ++ validationErrorString err filePath inputLines
-      errorsToString errs = foldl' errToString "" errs
+      errToString err errStr = 
+        validationErrorString err filePath inputLines ++ errStr
+      errorsToString errs = foldr errToString "" errs
    in first errorsToString result
 
 validationErrorString :: V.Error -> FilePath -> [String] -> String
