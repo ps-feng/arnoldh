@@ -44,36 +44,23 @@ voidConsumer :: Parser ()
 voidConsumer = return ()
 
 -- Uses default built-in space skipper, which includes newlines.
--- TODO: verify this because it causes some issues like 'end of main' requiring a newline
 eolConsumer :: Parser ()
 eolConsumer = space1
 
--- this will trim all the whitespace after consuming the parsed lexeme
-lexeme :: Parser a -> Parser a
-lexeme = L.lexeme spaceConsumer
-
--- TODO: check usages of 'symbol' as we should probably enforce at least 1 whitespace in some cases
--- TODO: check space consumption. Might be better to not consume any here, as this causes the internal
---       ending column state of the parser to count also the whitespace.
 symbol :: String -> Parser String
 symbol = L.symbol spaceConsumer
 
-integerParser :: Parser Integer
-integerParser = lexeme L.decimal
-
 signedIntegerParser :: Parser Integer
-signedIntegerParser = L.signed voidConsumer integerParser
-
-stringLiteralParser :: Parser String
-stringLiteralParser = lexeme (char '"' >> manyTill L.charLiteral (char '"'))
+signedIntegerParser = L.signed voidConsumer L.decimal
 
 booleanTermParser :: Parser Integer
 booleanTermParser = (0 <$ symbol "@I LIED") <|> (1 <$ symbol "@NO PROBLEMO")
 
 identifierParser :: Parser String
-identifierParser = (lexeme . try) p
-  where
-    p = liftA2 (:) letterChar (many alphaNumChar)
+identifierParser = liftA2 (:) letterChar (many alphaNumChar)
+
+stringLiteralParser :: Parser String
+stringLiteralParser = char '"' >> manyTill L.charLiteral (char '"')
 
 -- TODO: investigate other approaches as the parsers defined in this file
 -- will generally consume the trailing spaces so the spaces end up counting towards
@@ -191,8 +178,8 @@ callMethodStatementParser = do
       (symbol "GET YOUR ASS TO MARS" >>
        locatedParser identifierParser <* eolConsumer)
   symbol "DO IT NOW"
-  methodName <- locatedParser identifierParser
-  args <- many operandParser <* eolConsumer
+  methodName <- locatedParser identifierParser <* spaceConsumer
+  args <- many (operandParser <* spaceConsumer) <* eolConsumer
   return (CallMethod var methodName args)
 
 returnStatementParser :: Parser Statement
@@ -260,7 +247,7 @@ methodParser = do
   arguments <- many $ argumentParser <* eolConsumer
   returnType <- try nonVoidMethodTypeParser <|> return TVoid
   statements <- try methodStatementsParser <|> return []
-  symbol "HASTA LA VISTA, BABY" >> eolConsumer
+  symbol "HASTA LA VISTA, BABY" >> space
   return (Method name returnType arguments statements)
 
 abstractMethodParser :: Parser AbstractMethod
