@@ -7,7 +7,9 @@ The original version compiles to JVM bytecode while this one converts to JavaScr
 
 Improvements over the original implementation:
 - Scoped blocks. `if-else` and `while` blocks in the original implementation were not scoped. You could declare a variable within a block and it'd become usable in the whole method.
-- 
+- Semantic validation happens before code generation. The original implementation relied on the bytecode library it was using to check for errors and the error reporting is not very nice.
+- Nice errors. When an error occurs, the line where the error was found is printed
+and the actual error is underlined.
 
 ## HelloWorld.arnoldc
 
