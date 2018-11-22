@@ -16,7 +16,7 @@ data Located a =
   deriving (Eq, Show, Ord)
 
 instance Functor Located where
-  fmap f val = locate (f $ unlocate val) val
+  fmap f (At region a) = At region (f a)
 
 at :: Position -> Position -> a -> Located a
 at start end value = At (Region start end) value
@@ -26,6 +26,3 @@ unlocate (At _ a) = a
 
 locate :: a -> Located b -> Located a
 locate a (At region _) = At region a
-
-getLocation :: Located a -> Region
-getLocation (At region _) = region
