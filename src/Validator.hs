@@ -73,7 +73,7 @@ createChildSymbolTable scope symbolTable =
     }
 
 -- will return the same table if there's no parent table
--- TODO: see if we can improve this
+-- To be improved: see if we can somehow avoid the Nothing case
 parentSymbolTable :: SymbolTable -> SymbolTable
 parentSymbolTable symbolTable =
   case _parentTable symbolTable of
@@ -91,9 +91,9 @@ mainMethodRegion =
     , R._end = R.Position {R._line = 1, R._column = 1}
     }
 
--- 1. create global symbol table (all functions) -- done
--- 2. check that main method exists -- done
--- 3. validate all methods, each of which have their own symbol table -- done
+-- 1. create global symbol table (all functions)
+-- 2. check that main method exists
+-- 3. validate all methods, each of which have their own symbol table
 validateAst :: Program -> Either [Error] Program
 validateAst program =
   let (errors, globalSymbolTable) = createGlobalSymbolTable program
@@ -213,11 +213,11 @@ validateScopedStatements locatedStatements = do
   validateStatements locatedStatements
   popSymbolTable
 
--- 1. Check all used variables are declared - done
--- 2. Check no duplicated variables - done
--- 3. Check all called methods exist - done
--- 4. Check variables do not clash with method arguments - done
--- 5. if-else blocks should push a new scope - done
+-- 1. Check all used variables are declared
+-- 2. Check no duplicated variables
+-- 3. Check all called methods exist
+-- 4. Check variables do not clash with method arguments
+-- 5. if-else blocks should push a new scope
 validateStatement :: LocatedStatement -> State ValidationState ()
 validateStatement locatedStatement =
   case R.unlocate locatedStatement of
@@ -310,8 +310,8 @@ validateMaybeExpression :: Maybe LocatedExpr -> State ValidationState ()
 validateMaybeExpression (Just expr) = validateExpression expr
 validateMaybeExpression Nothing = return ()
 
--- 1. Check called method exists -- done
--- 2. Check we're not calling a void method when storing result in a variable -- done
+-- 1. Check called method exists
+-- 2. Check we're not calling a void method when storing result in a variable
 validateMethodCall ::
      LocatedMethodName -> Maybe LocatedVarName -> State ValidationState ()
 validateMethodCall locatedMethodName maybeVarName =
